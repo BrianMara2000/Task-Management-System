@@ -1,12 +1,14 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
+import AppLayout from "../components/layout/AppLayout";
 import InterceptorSetup from "../components/InterceptorSetup";
 
 // Lazy load components
 const Login = lazy(() => import("../pages/Login"));
 const Register = lazy(() => import("../pages/Register"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
+const Home = lazy(() => import("../pages/Home"));
 
 const AppRoutes = () => {
   return (
@@ -21,10 +23,17 @@ const AppRoutes = () => {
 
           {/* Protected routes */}
           <Route
-            path="/dashboard"
+            path="/app/*"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <AppLayout>
+                  <Routes>
+                    <Route path="/home" element={<Home />} />
+                    {/* <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/inbox" element={<Inbox />} />
+                    <Route path="/reports" element={<Reports />} /> */}
+                  </Routes>
+                </AppLayout>
               </ProtectedRoute>
             }
           />
