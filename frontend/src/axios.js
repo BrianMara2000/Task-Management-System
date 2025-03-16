@@ -4,10 +4,22 @@ import { setToken } from "./features/auth/authSlice";
 
 const axiosClient = axios.create({
   baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
+  withCredentials: true,
+  withXSRFToken: true,
 });
 
-axios.defaults.withCredentials = true;
-axios.defaults.withXSRFToken = true;
+const csrfClient = axios.create({
+  baseURL: `${import.meta.env.VITE_API_BASE_URL}`,
+  withCredentials: true,
+});
+
+axiosClient.interceptors.request.use((config) => {
+  const token = store.getState().auth.token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export const setupInterceptors = (navigate) => {
   axiosClient.interceptors.response.use(
@@ -33,4 +45,4 @@ export const setupInterceptors = (navigate) => {
   );
 };
 
-export default axiosClient;
+export { axiosClient, csrfClient };
