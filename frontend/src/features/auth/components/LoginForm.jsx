@@ -134,7 +134,7 @@ const LoginForm = () => {
               {isLoading ? (
                 <>
                   <Spinner className="w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin mr-2" />
-                  Loading...
+                  Logging in...
                 </>
               ) : (
                 "Login"
