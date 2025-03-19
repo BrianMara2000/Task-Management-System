@@ -9,6 +9,7 @@ const Login = lazy(() => import("../pages/Login"));
 const Register = lazy(() => import("../pages/Register"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Home = lazy(() => import("../pages/Home"));
+const Users = lazy(() => import("../pages/Users"));
 
 const AppRoutes = () => {
   return (
@@ -29,9 +30,9 @@ const AppRoutes = () => {
                 <AppLayout>
                   <Routes>
                     <Route path="/home" element={<Home />} />
-                    {/* <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/inbox" element={<Inbox />} />
-                    <Route path="/reports" element={<Reports />} /> */}
+                    <Route path="/users" element={<Users />} />
+                    {/* <Route path="/inbox" element={<Inbox />} /> */}
+                    {/* <Route path="/reports" element={<Reports />} /> */}
                   </Routes>
                 </AppLayout>
               </ProtectedRoute>

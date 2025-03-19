@@ -1,103 +1,93 @@
-import { Calendar, Home, Inbox, Search, Settings, LogOut } from "lucide-react";
+"use client";
+
+import * as React from "react";
+import {
+  CircleCheck,
+  Frame,
+  Home,
+  Inbox,
+  Map,
+  PieChart,
+  Users,
+} from "lucide-react";
+
+import { NavMain } from "@/components/sidebar/nav-main";
+import { NavProjects } from "@/components/sidebar/nav-projects";
+import { NavUser } from "@/components/sidebar/nav-user";
+import { TeamSwitcher } from "@/components/sidebar/team-switcher";
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { axiosClient } from "@/axios";
-import { logout } from "@/features/auth/authSlice";
+// This is sample data.
+const data = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  navMain: [
+    {
+      title: "Home",
+      url: "/app/home",
+      icon: Home,
+      isActive: true,
+    },
+    {
+      title: "My Tasks",
+      url: "/app/tasks",
+      icon: CircleCheck,
+    },
+    {
+      title: "Inbox",
+      url: "/app/inbox",
+      icon: Inbox,
+    },
+    {
+      title: "Users",
+      url: "/app/users",
+      icon: Users,
+    },
+  ],
+  projects: [
+    {
+      name: "Design Engineering",
+      url: "#",
+      icon: Frame,
+    },
+    {
+      name: "Sales & Marketing",
+      url: "#",
+      icon: PieChart,
+    },
+    {
+      name: "Travel",
+      url: "#",
+      icon: Map,
+    },
+  ],
+};
 
-// Menu items.
-const items = [
-  {
-    title: "Home",
-    url: "/app/home",
-    icon: Home,
-  },
-  {
-    title: "Inbox",
-    url: "/app/inbox",
-    icon: Inbox,
-  },
-  {
-    title: "Calendar",
-    url: "/app/calendar",
-    icon: Calendar,
-  },
-  {
-    title: "Search",
-    url: "/app/search",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "/app/settings",
-    icon: Settings,
-  },
-];
-
-export function AppSidebar() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await axiosClient.post("/logout");
-      localStorage.removeItem("token");
-      dispatch(logout());
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
+export function AppSidebar({ ...props }) {
   return (
-    <Sidebar className="w-64 h-full bg-gray-900 text-gray-900">
+    <Sidebar className="z-50 fixed" collapsible="icon" {...props}>
+      <SidebarTrigger className="absolute -right-14 top-5 z-20" />
+      <SidebarHeader>
+        <TeamSwitcher teams={data.teams} />
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-400">
-            Application
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a
-                      href={item.url}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
-                    >
-                      <item.icon size={20} />
-                      <span className="text-sm">{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-
-              {/* Logout Button */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    <LogOut size={20} />
-                    <span className="text-sm">Logout</span>
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <NavMain items={data.navMain} />
+        <NavProjects projects={data.projects} />
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={data.user} />
+      </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
