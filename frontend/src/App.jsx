@@ -15,7 +15,7 @@ const App = () => {
     if (token) {
       dispatch(setToken(token));
       axiosClient
-        .get("/user")
+        .get("/getUser")
         .then((response) => {
           dispatch(setUser(response.data));
         })
