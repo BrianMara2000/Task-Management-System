@@ -10,7 +10,8 @@ const initialState = {
   pagination: {
     page: 1,
     pageSize: null,
-    total: 0, // ✅ Added total count
+    total: 0,
+    links: "",
   },
 };
 
@@ -25,7 +26,7 @@ const userSlice = createSlice({
       state.filters = action.payload;
     },
     setPagination: (state, action) => {
-      state.pagination = action.payload;
+      state.pagination = { ...state.pagination, ...action.payload };
     },
     addUser: (state, action) => {
       state.users.push(action.payload);
