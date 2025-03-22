@@ -27,6 +27,7 @@ export default function Users() {
           page: response.data.users.current_page,
           pageSize: response.data.users.per_page,
           total: response.data.users.total,
+          links: response.data.users.links,
         })
       );
     } catch (error) {
