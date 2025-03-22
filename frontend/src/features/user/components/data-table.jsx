@@ -2,7 +2,6 @@ import {
   useReactTable,
   getCoreRowModel,
   flexRender,
-  getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
 } from "@tanstack/react-table";
@@ -21,32 +20,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { useState } from "react";
-import { DataTablePagination } from "@/components/ui/pagination";
+import { DataTablePagination } from "@/components/core/pagination";
 import { Input } from "@/components/ui/input";
 // import { setPagination } from "@/features/user/userSlice";
 import { useDispatch } from "react-redux";
 
 export function DataTable({ columns, data, pagination, setPagination }) {
   const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [rowSelection, setRowSelection] = useState({});
   const dispatch = useDispatch();
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onRowSelectionChange: setRowSelection,
     state: {
       sorting,
-      columnFilters,
-      rowSelection,
       pagination: {
         pageIndex: pagination.page - 1, // ✅ Convert 1-based index to 0-based
         pageSize: pagination.pageSize,

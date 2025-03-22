@@ -1,7 +1,9 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { SquarePen, Trash2Icon, ArrowUpDown } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import Actions from "./Actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const columnHelper = createColumnHelper();
 
@@ -28,6 +30,19 @@ export const columns = [
   },
   columnHelper.accessor("name", {
     header: "Name",
+    cell: ({ row }) => (
+      <div className="flex items-center space-x-4 py-2">
+        <Avatar className="w-10 h-10">
+          <AvatarImage
+            src={row.original.profile_image}
+            alt={row.original.name}
+            className="w-full h-full object-cover"
+          />
+          <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <span>{row.original.name}</span>
+      </div>
+    ),
   }),
   columnHelper.accessor("email", {
     header: ({ column }) => (
@@ -40,23 +55,9 @@ export const columns = [
       </Button>
     ),
   }),
-  // columnHelper.accessor("role", {
-  //   header: "Role",
-  // }),
-  columnHelper.accessor("actions", {
+  columnHelper.display({
     header: "Actions",
     id: "actions",
-    cell: () => {
-      return (
-        <div className="flex items-center w-10 gap-2">
-          <Button className="cursor-pointer bg-purple-500">
-            <SquarePen className="" />
-          </Button>
-          <Button className="cursor-pointer bg-red-500">
-            <Trash2Icon className="" />
-          </Button>
-        </div>
-      );
-    },
+    cell: ({ row }) => <Actions user={row.original} />,
   }),
 ];
