@@ -16,11 +16,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ProfileImageUpload from "./ProfileImageUpload";
 import { useDispatch } from "react-redux";
 import { axiosClient } from "@/axios";
-import { updateUser } from "../userSlice";
+import { deleteUser as deleteUserAction, updateUser } from "../userSlice";
+import { toast } from "sonner";
 
 export default function Actions({ user }) {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState({
     name: "",
     email: "",
@@ -40,6 +42,26 @@ export default function Actions({ user }) {
       });
     } catch (error) {
       console.error("Failed to fetch user:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteUser = async () => {
+    try {
+      await axiosClient.delete(`/users/${user.id}`);
+      dispatch(deleteUserAction(user.id));
+      setIsDeleteOpen(false);
+      toast("User Deleted", {
+        description: "The user has been removed successfully.",
+        type: "success",
+      });
+    } catch (error) {
+      toast("Error", {
+        description: "Failed to delete the user. Please try again.",
+        type: "error",
+      });
+      console.error("Failed to delete user:", error);
     } finally {
       setIsLoading(false);
     }
@@ -172,9 +194,35 @@ export default function Actions({ user }) {
         </DialogContent>
       </Dialog>
 
-      <Button className="cursor-pointer bg-red-500">
-        <Trash2Icon />
-      </Button>
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogTrigger asChild>
+          <Button className="cursor-pointer bg-red-500">
+            <Trash2Icon />
+          </Button>
+        </DialogTrigger>
+
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-500"
+              onClick={deleteUser}
+              disabled={isLoading}
+            >
+              {isLoading ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

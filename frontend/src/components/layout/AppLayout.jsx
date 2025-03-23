@@ -14,11 +14,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { AppSidebar } from "./AppSideBar";
 import { TopBar } from "./TopBar";
+import { Toaster } from "../ui/sonner";
 
 const AppLayout = ({ children }) => {
   return (
     <div className=" flex h-screen">
       <SidebarProvider>
+        <Toaster />
         <AppSidebar />
         <div className="w-full">
           <SidebarInset className="py-20 relative ">
