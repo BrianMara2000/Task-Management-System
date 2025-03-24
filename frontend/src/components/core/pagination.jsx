@@ -23,9 +23,13 @@ export function DataTablePagination({ setPagination, pagination }) {
             className={
               pagination.page === 1 ? "text-gray-500 cursor-not-allowed" : ""
             }
-            onClick={() =>
-              setPagination({ ...pagination, page: pagination.page - 1 })
-            }
+            onClick={(e) => {
+              if (pagination.page === 1) {
+                e.preventDefault();
+                return;
+              }
+              setPagination({ ...pagination, page: pagination.page - 1 });
+            }}
             disabled={pagination.page === 1}
           />
         </PaginationItem>
@@ -50,9 +54,9 @@ export function DataTablePagination({ setPagination, pagination }) {
               </PaginationLink>
             ))}
         </PaginationItem>
-        <PaginationItem>
+        {/* <PaginationItem>
           <PaginationEllipsis />
-        </PaginationItem>
+        </PaginationItem> */}
         <PaginationItem>
           <PaginationNext
             className={
@@ -61,13 +65,16 @@ export function DataTablePagination({ setPagination, pagination }) {
                 ? "opacity-50 cursor-not-allowed"
                 : ""
             }
-            onClick={() =>
-              setPagination({ ...pagination, page: pagination.page - 1 })
-            }
-            disabled={
-              pagination.page ===
-              Math.ceil(pagination.total / pagination.pageSize)
-            }
+            onClick={(e) => {
+              if (
+                pagination.page ===
+                Math.ceil(pagination.total / pagination.pageSize)
+              ) {
+                e.preventDefault(); // Prevent navigation
+                return;
+              }
+              setPagination({ ...pagination, page: pagination.page + 1 });
+            }}
           />
         </PaginationItem>
       </PaginationContent>

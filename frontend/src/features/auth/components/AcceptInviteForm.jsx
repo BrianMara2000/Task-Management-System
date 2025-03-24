@@ -22,7 +22,6 @@ import Spinner from "@/components/ui/spinner";
 const schema = z
   .object({
     name: z.string().nonempty("Name is required"),
-    email: z.string().email("Invalid email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
   })
@@ -31,12 +30,12 @@ const schema = z
     path: ["confirmPassword"],
   });
 
-const RegisterForm = () => {
+const AcceptInviteForm = ({ token, email }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirmation, setShowPasswordConfirmation] =
     useState(false);
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -47,17 +46,15 @@ const RegisterForm = () => {
   } = useForm({
     resolver: zodResolver(schema),
   });
-
-  // ✅ Handle Form Submission
   const onSubmit = async (data) => {
     setIsLoading((prev) => !prev);
-
     try {
       await csrfClient.get("/sanctum/csrf-cookie");
 
-      const response = await axiosClient.post("/register", {
+      const response = await axiosClient.post("/accept-invite", {
         name: data.name,
-        email: data.email,
+        email,
+        token,
         password: data.password,
         password_confirmation: data.confirmPassword,
       });
@@ -86,7 +83,6 @@ const RegisterForm = () => {
       setIsLoading((prev) => !prev);
     }
   };
-
   return (
     <div className="flex h-screen items-center justify-center w-[50%]">
       <div className="bg-white rounded-xl shadow-lg flex flex-row-reverse w-full min-h-[50%]">
@@ -112,27 +108,6 @@ const RegisterForm = () => {
               {errors.name && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.name.message}
-                </p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <div className="flex items-center border-b border-gray-300 py-2">
-                <Mail
-                  strokeWidth={1.5}
-                  className="w-6 h-6 text-white fill-purple-600 mr-2"
-                />
-                <Input
-                  className="border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus-visible:border-0 "
-                  type="email"
-                  placeholder="Enter your email"
-                  {...register("email")}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.email.message}
                 </p>
               )}
             </div>
@@ -234,4 +209,4 @@ const RegisterForm = () => {
   );
 };
 
-export default RegisterForm;
+export default AcceptInviteForm;
