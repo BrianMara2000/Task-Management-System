@@ -20,16 +20,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useState } from "react";
 import { DataTablePagination } from "@/components/core/pagination";
-import { Input } from "@/components/ui/input";
-// import { setPagination } from "@/features/user/userSlice";
 import { useDispatch } from "react-redux";
+import { Button } from "@/components/ui/button";
+import { axiosClient } from "@/axios";
+import { toast } from "sonner";
 
 export function DataTable({ columns, data, pagination, setPagination }) {
   const [sorting, setSorting] = useState([]);
   const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState(null);
 
   const table = useReactTable({
     data,
@@ -48,6 +64,29 @@ export function DataTable({ columns, data, pagination, setPagination }) {
     manualPagination: true, // ✅ Enable manual pagination
     rowCount: pagination.total, // ✅ Total rows from backend
   });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await axiosClient.post("/users/invite-user", {
+        email,
+      });
+
+      toast("User Invited", {
+        description: "The user has been invited successfully.",
+        type: "success",
+      });
+      setEmail("");
+    } catch (error) {
+      console.error("Failed to invite user:", error);
+      setError(error.response?.data?.errors?.email || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -86,6 +125,50 @@ export function DataTable({ columns, data, pagination, setPagination }) {
           }
           className="max-w-sm"
         />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              // onClick={inviteUser}
+              className="cursor-pointer bg-purple-500"
+            >
+              Invite User
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Invite User</DialogTitle>
+              <DialogDescription>
+                Enter the user's email below to send an invitation.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} encType="multipart/form-data">
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="name"
+                    className="col-span-3"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+              </div>
+              <DialogFooter>
+                <Button
+                  className="bg-purple-500"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Please wait..." : "Invite"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
       <div className="rounded-md border p-2">
         <Table>
