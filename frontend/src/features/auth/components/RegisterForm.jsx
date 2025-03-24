@@ -17,6 +17,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import Spinner from "@/components/ui/spinner";
 
 const schema = z
   .object({
@@ -36,6 +37,7 @@ const RegisterForm = () => {
   const [showPasswordConfirmation, setShowPasswordConfirmation] =
     useState(false);
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -48,6 +50,8 @@ const RegisterForm = () => {
 
   // ✅ Handle Form Submission
   const onSubmit = async (data) => {
+    setIsLoading((prev) => !prev);
+
     try {
       await csrfClient.get("/sanctum/csrf-cookie");
 
@@ -78,6 +82,8 @@ const RegisterForm = () => {
           message: err.response?.data?.message || "Registration failed",
         });
       }
+    } finally {
+      setIsLoading((prev) => !prev);
     }
   };
 
@@ -194,8 +200,15 @@ const RegisterForm = () => {
             </div>
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full">
-              Register
+            <Button type="submit" className="w-full cursor-pointer">
+              {isLoading ? (
+                <>
+                  <Spinner className="w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin mr-2" />
+                  Please wait...
+                </>
+              ) : (
+                "Register"
+              )}
             </Button>
           </form>
 
