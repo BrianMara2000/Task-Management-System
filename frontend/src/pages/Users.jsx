@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { columns } from "@/features/user/components/columns";
 import { DataTable } from "@/features/user/components/data-table";
 import { axiosClient } from "@/axios";
@@ -10,8 +10,11 @@ export default function Users() {
   const users = useSelector((state) => state.user.users);
   const pagination = useSelector((state) => state.user.pagination);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await axiosClient.get(`/users`, {
         params: {
@@ -20,7 +23,6 @@ export default function Users() {
         },
       });
 
-      setLoading(false);
       dispatch(setUsers(response.data.users.data));
       dispatch(
         setPagination({
@@ -32,17 +34,22 @@ export default function Users() {
       );
     } catch (error) {
       console.error("Failed to fetch users:", error);
+      setError("Failed to load users. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [dispatch, pagination.page, pagination.pageSize]); // Dependencies inside useCallback
 
   useEffect(() => {
-    fetchUsers(pagination.page, pagination.pageSize);
-  }, [pagination.page, pagination.pageSize]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   return (
     <div className="container mx-auto max-w-3xl py-10">
       {loading ? (
-        <div>Loading...</div>
+        <div>Loading...</div> // Replace this with a Skeleton Loader or Spinner
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
       ) : (
         <DataTable
           columns={columns}
