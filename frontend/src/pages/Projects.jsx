@@ -1,51 +1,51 @@
 import { useCallback, useEffect, useState } from "react";
-import { columns } from "@/features/user/components/columns";
-import { DataTable } from "@/features/user/components/data-table";
+import { columns } from "@/features/project/components/columns";
+import { DataTable } from "@/features/project/components/data-table";
 import { axiosClient } from "@/axios";
 import { useDispatch, useSelector } from "react-redux";
-import { setPagination, setUsers } from "@/features/user/userSlice";
+import { setPagination, setProjects } from "@/features/project/projectSlice";
 
-export default function Users() {
+export default function Projects() {
   const dispatch = useDispatch();
-  const users = useSelector((state) => state.user.users);
-  const pagination = useSelector((state) => state.user.pagination);
+  const projects = useSelector((state) => state.project.projects);
+  const pagination = useSelector((state) => state.project.pagination);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosClient.get(`/users`, {
+      const response = await axiosClient.get(`/projects`, {
         params: {
           page: pagination.page,
           per_page: pagination.pageSize,
         },
       });
 
-      dispatch(setUsers(response.data.users.data));
+      dispatch(setProjects(response.data.data));
       dispatch(
         setPagination({
-          page: response.data.users.current_page,
-          pageSize: response.data.users.per_page,
-          total: response.data.users.total,
-          links: response.data.users.links,
+          page: response.data.meta.current_page,
+          pageSize: response.data.meta.per_page,
+          total: response.data.meta.total,
+          links: response.data.meta.links,
         })
       );
     } catch (error) {
-      console.error("Failed to fetch users:", error);
-      setError("Failed to load users. Please try again.");
+      console.error("Failed to fetch projects:", error);
+      setError("Failed to load projects. Please try again.");
     } finally {
       setLoading(false);
     }
   }, [dispatch, pagination.page, pagination.pageSize]); // Dependencies inside useCallback
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchProjects();
+  }, [fetchProjects]);
 
   return (
-    <div className="container mx-auto max-w-3xl py-10">
+    <div className="container mx-auto w-full py-10">
       {loading ? (
         <div>Loading...</div> // Replace this with a Skeleton Loader or Spinner
       ) : error ? (
@@ -53,7 +53,7 @@ export default function Users() {
       ) : (
         <DataTable
           columns={columns}
-          data={users}
+          data={projects}
           pagination={pagination}
           setPagination={(newPagination) =>
             dispatch(setPagination(newPagination))
