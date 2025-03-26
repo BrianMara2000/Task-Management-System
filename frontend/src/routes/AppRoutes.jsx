@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AppLayout from "../components/layout/AppLayout";
 import InterceptorSetup from "../components/InterceptorSetup";
+import Projects from "@/pages/Projects";
 
 // Lazy load components
 const Login = lazy(() => import("../pages/Login"));
@@ -31,6 +32,7 @@ const AppRoutes = () => {
                   <Routes>
                     <Route path="/home" element={<Home />} />
                     <Route path="/users" element={<Users />} />
+                    <Route path="/projects" element={<Projects />} />
                     {/* <Route path="/inbox" element={<Inbox />} /> */}
                     {/* <Route path="/reports" element={<Reports />} /> */}
                   </Routes>
