@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import ProfileImageUpload from "./ProfileImageUpload";
+import ImageUpload from "./ImageUpload";
 import { useDispatch } from "react-redux";
 import { axiosClient } from "@/axios";
 import { deleteUser as deleteUserAction, updateUser } from "../userSlice";
@@ -127,7 +127,7 @@ export default function Actions({ user }) {
             <form onSubmit={handleSubmit} encType="multipart/form-data">
               <div className="grid gap-4 py-4">
                 <div className="flex justify-center">
-                  <ProfileImageUpload onUpload={handleUpload} />
+                  <ImageUpload onUpload={handleUpload} />
                 </div>
                 {selectedUser.profile_image && (
                   <div className="flex justify-center">

@@ -1,6 +1,4 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import Actions from "./Actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,9 +7,9 @@ import { formatStatus } from "@/constants/constants";
 const columnHelper = createColumnHelper();
 
 const statusColors = {
-  PENDING: "bg-yellow-500 text-white",
-  IN_PROGRESS: "bg-blue-500 text-white",
-  COMPLETED: "bg-green-500 text-white",
+  Pending: "bg-yellow-500 text-white",
+  In_Progress: "bg-blue-500 text-white",
+  Completed: "bg-green-500 text-white",
 };
 
 export const columns = [
@@ -39,7 +37,7 @@ export const columns = [
     header: "ID",
     cell: ({ row }) => <span>{row.original.id}</span>,
   }),
-  columnHelper.accessor("image", {
+  columnHelper.accessor("image_path", {
     header: "Image",
     cell: ({ row }) => (
       <Avatar className="w-10 h-10">
@@ -80,6 +78,6 @@ export const columns = [
   columnHelper.display({
     header: "Actions",
     id: "actions",
-    cell: ({ row }) => <Actions user={row.original} />,
+    cell: ({ row }) => <Actions project={row.original} />,
   }),
 ];
