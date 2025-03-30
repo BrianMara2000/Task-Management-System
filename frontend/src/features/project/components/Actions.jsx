@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SquarePen, Trash2Icon } from "lucide-react";
+import {
+  EllipsisVerticalIcon,
+  Pin,
+  PinOff,
+  SquarePen,
+  Trash2Icon,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,37 +25,49 @@ import {
   deleteProject as deleteProjectAction,
   updateProject,
 } from "../projectSlice";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import ImageUpload from "./ImageUpload";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import Spinner from "@/components/ui/spinner";
 
 export default function Actions({ project }) {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState({
-    name: "",
-    email: "",
-    profile_image: null,
+    name: project.name,
+    description: project.description,
+    status: project.status,
+    image_path: project.image_path,
+    due_date: project.due_date,
+    pinned: project.pinned,
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const showProject = async () => {
-    setIsOpen(true);
-    setIsLoading(true);
-    try {
-      const response = await axiosClient.get(`/projects/${project.id}`);
-      setSelectedProject({
-        name: response.data.name,
-        email: response.data.email,
-        profile_image: response.data.profile_image,
-      });
-    } catch (error) {
-      console.error("Failed to fetch project:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const deleteProject = async () => {
+    setIsLoading(true);
     try {
       await axiosClient.delete(`/projects/${project.id}`);
       dispatch(deleteProjectAction(project.id));
@@ -69,21 +87,32 @@ export default function Actions({ project }) {
     }
   };
 
+  const handleUpload = (file) => {
+    setSelectedProject((prevProject) => ({
+      ...prevProject,
+      image_path: file,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append("name", selectedProject.name);
-      formData.append("email", selectedProject.email);
-      if (selectedProject.profile_image instanceof File) {
-        formData.append("profile_image", selectedProject.profile_image);
+      formData.append("description", selectedProject.description);
+      formData.append("status", selectedProject.status);
+      formData.append("pinned", selectedProject.pinned);
+      if (selectedProject.due_date) {
+        formData.append(
+          "due_date",
+          format(new Date(selectedProject.due_date), "yyyy-MM-dd")
+        );
+      }
+      if (typeof selectedProject.image_path === "object") {
+        formData.append("image_path", selectedProject.image_path);
       }
       formData.append("_method", "PUT");
-
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
 
       const response = await axiosClient.post(
         `/projects/${project.id}`,
@@ -92,124 +121,305 @@ export default function Actions({ project }) {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-
-      dispatch(updateProject(response.data));
+      console.log("Response", project);
+      dispatch(
+        updateProject({
+          ...response.data.project,
+          created_at: format(
+            new Date(response.data.project.created_at),
+            "MMM dd, yyyy"
+          ),
+        })
+      );
       setIsOpen(false);
+      toast.success("Project Updated", {
+        closeButton: true,
+      });
     } catch (error) {
+      toast.error("Project Update Failed", {
+        closeButton: true,
+      });
       console.error("Failed to update project:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="flex items-center w-10 gap-2">
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button
-            onClick={showProject}
-            className="cursor-pointer bg-purple-500"
-          >
-            <SquarePen />
-          </Button>
-        </DialogTrigger>
+  const togglePinned = async () => {
+    setIsLoading(true);
+    try {
+      const newPinnedStatus = !selectedProject.pinned;
 
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          {isLoading ? (
-            <div className="grid gap-4 py-4">
-              <Skeleton className="w-24 h-24 rounded-full mx-auto" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} encType="multipart/form-data">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    className="col-span-3"
-                    value={selectedProject.name}
-                    onChange={(e) =>
-                      setSelectedProject((prevProject) => ({
-                        ...prevProject,
-                        name: e.target.value,
-                      }))
-                    }
-                    required
-                  />
+      setSelectedProject((prev) => ({
+        ...prev,
+        pinned: newPinnedStatus,
+      }));
+
+      const response = await axiosClient.put(`projects/${project.id}/pin`, {
+        pinned: newPinnedStatus,
+      });
+      dispatch(
+        updateProject({ ...response.data, pinned: response.data.pinned })
+      );
+    } catch (error) {
+      console.error("Error toggling pin:", error);
+      setSelectedProject((prev) => ({
+        ...prev,
+        pinned: !prev.pinned,
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedProject((prev) => ({
+      ...prev,
+      pinned: project.pinned,
+    }));
+  }, [project.pinned]);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Popover>
+        <PopoverTrigger className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-white transition duration-200 ease-in-out hover:bg-indigo-100 hover:text-indigo-600 focus:ring-2 focus:ring-indigo-400">
+          <EllipsisVerticalIcon className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
+        </PopoverTrigger>
+
+        <PopoverContent className="flex flex-col w-40 p-1 gap-2 bg-white shadow-lg rounded-md">
+          {/* Pin Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={togglePinned}
+                  disabled={isLoading}
+                  className={`flex items-center gap-2 w-full px-4 py-2 rounded-md transition duration-200 ${
+                    selectedProject.pinned
+                      ? "bg-yellow-400 text-white hover:bg-yellow-500"
+                      : "bg-transparent text-gray-600 hover:bg-gray-100"
+                  } ${isLoading ? "cursor-not-allowed" : " "}`}
+                >
+                  {isLoading ? (
+                    <Spinner className="ml-10" />
+                  ) : selectedProject.pinned ? (
+                    <Pin className="h-5 w-5 text-white" />
+                  ) : (
+                    <PinOff className="h-5 w-5 text-gray-600" />
+                  )}
+                  <span>
+                    {isLoading
+                      ? "Please wait..."
+                      : selectedProject.pinned
+                      ? "Unpin"
+                      : "Pin"}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {selectedProject.pinned
+                  ? "Unpin from sidebar"
+                  : "Pin to sidebar"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Edit Project Button */}
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 w-full px-3 py-2 text-purple-700 bg-transparent rounded-md hover:bg-purple-500 hover:text-white transition duration-200">
+                <SquarePen className="h-5 w-5" />
+                <span>Edit</span>
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-[800px]">
+              <DialogHeader>
+                <DialogTitle>Edit Project</DialogTitle>
+                <DialogDescription>
+                  Make changes to your project details here. Click save when
+                  you're done.
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Form Content */}
+              {isLoading ? (
+                <div className="grid gap-4 py-4">
+                  <Skeleton className="w-24 h-24 rounded-full mx-auto" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-12 w-full" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
-                  </Label>
-                  <Input
-                    type="email"
-                    id="email"
-                    className="col-span-3"
-                    value={selectedProject.email}
-                    onChange={(e) =>
-                      setSelectedProject((prevProject) => ({
-                        ...prevProject,
-                        email: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-              </div>
+              ) : (
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
+                  <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                    {/* Left: Image Upload */}
+                    <div className="flex flex-col justify-center items-center gap-4">
+                      <ImageUpload onUpload={handleUpload} />
+                      {selectedProject.image_path && (
+                        <img
+                          src={
+                            selectedProject.image_path instanceof File
+                              ? URL.createObjectURL(selectedProject.image_path)
+                              : selectedProject.image_path?.startsWith(
+                                  "/storage/"
+                                )
+                              ? `http://localhost:8000${selectedProject.image_path}`
+                              : selectedProject.image_path
+                          }
+                          alt="Project"
+                          className="w-24 h-24 rounded-full object-cover border"
+                        />
+                      )}
+                    </div>
+
+                    {/* Right: Form Fields */}
+                    <div className="flex flex-col gap-4">
+                      {/* Name Field */}
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="name">Project Name</Label>
+                        <Input
+                          id="name"
+                          value={selectedProject.name}
+                          onChange={(e) =>
+                            setSelectedProject((prevProject) => ({
+                              ...prevProject,
+                              name: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      {/* Description Field */}
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={selectedProject.description}
+                          onChange={(e) =>
+                            setSelectedProject((prevProject) => ({
+                              ...prevProject,
+                              description: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      {/* Due Date Field */}
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="dueDate">Due Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !selectedProject.due_date &&
+                                  "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {selectedProject.due_date ? (
+                                format(selectedProject.due_date, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={selectedProject.due_date}
+                              onSelect={(date) => {
+                                setSelectedProject((prevProject) => ({
+                                  ...prevProject,
+                                  due_date: date,
+                                }));
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      {/* Status Field */}
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                          value={selectedProject.status}
+                          onValueChange={(value) =>
+                            setSelectedProject((prev) => ({
+                              ...prev,
+                              status: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="in_progress">
+                              In Progress
+                            </SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <DialogFooter>
+                    <Button
+                      className="bg-purple-500 w-full md:w-auto rounded-md shadow-md"
+                      type="submit"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Project Button */}
+          <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 w-full px-3 py-2 text-red-700 bg-transparent rounded-md hover:bg-red-500 hover:text-white transition duration-200">
+                <Trash2Icon className="h-5 w-5" />
+                <span>Delete</span>
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Deletion</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this project? This action
+                  cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
               <DialogFooter>
                 <Button
-                  className="bg-purple-500"
-                  type="submit"
+                  variant="outline"
+                  onClick={() => setIsDeleteOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-red-500 rounded-md shadow-md"
+                  onClick={deleteProject}
                   disabled={isLoading}
                 >
-                  {isLoading ? "Saving..." : "Save Changes"}
+                  {isLoading ? "Deleting..." : "Delete"}
                 </Button>
               </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogTrigger asChild>
-          <Button className="cursor-pointer bg-red-500">
-            <Trash2Icon />
-          </Button>
-        </DialogTrigger>
-
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this project? This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-red-500"
-              onClick={deleteProject}
-              disabled={isLoading}
-            >
-              {isLoading ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DialogContent>
+          </Dialog>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

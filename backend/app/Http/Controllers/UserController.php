@@ -61,7 +61,7 @@ class UserController extends Controller
 
     private function saveImage(\Illuminate\Http\UploadedFile $image)
     {
-        $path = 'images/' . Str::random();
+        $path = 'images/profile/' . Str::random();
 
         // Store the image in the 'public' disk
         $filePath = Storage::disk('public')->putFileAs($path, $image, $image->getClientOriginalName());

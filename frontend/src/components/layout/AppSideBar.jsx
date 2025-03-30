@@ -1,18 +1,9 @@
 "use client";
 
 import * as React from "react";
-import {
-  CircleCheck,
-  Frame,
-  Home,
-  Inbox,
-  Map,
-  PieChart,
-  Users,
-} from "lucide-react";
+import { CircleCheck, Home, Inbox, Users } from "lucide-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
-import { NavProjects } from "@/components/sidebar/nav-projects";
 import { NavUser } from "@/components/sidebar/nav-user";
 import { TeamSwitcher } from "@/components/sidebar/team-switcher";
 import {
@@ -23,6 +14,12 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { NavPinnedProjects } from "../sidebar/nav-pinned-projects";
+import { useEffect } from "react";
+import { axiosClient } from "@/axios";
+import { useState } from "react";
+import { useSelector } from "react-redux";
+import { useMemo } from "react";
 
 // This is sample data.
 const data = {
@@ -54,26 +51,34 @@ const data = {
       icon: Users,
     },
   ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
 };
 
 export function AppSidebar({ ...props }) {
+  const [pinnedProjects, setPinnedProjects] = useState([]);
+  const projects = useSelector((state) => state.project.projects);
+
+  const projectDependencies = useMemo(
+    () =>
+      projects.map(({ pinned }) => ({
+        pinned,
+      })),
+    [projects]
+  );
+
+  const fetchPinnedProjects = async () => {
+    try {
+      const response = await axiosClient.get("projects/pinned-projects");
+
+      setPinnedProjects(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPinnedProjects();
+  }, [projectDependencies]);
+
   return (
     <Sidebar className="z-50 fixed" collapsible="icon" {...props}>
       <SidebarTrigger className="absolute -right-14 top-5 z-20" />
@@ -82,7 +87,7 @@ export function AppSidebar({ ...props }) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavPinnedProjects pinnedProjects={pinnedProjects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

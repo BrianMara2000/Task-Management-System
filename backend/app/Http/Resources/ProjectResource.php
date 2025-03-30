@@ -14,6 +14,8 @@ class ProjectResource extends JsonResource
      * @return array<string, mixed>
      */
 
+    public static $wrap = false;
+
     public function toArray(Request $request): array
     {
         return [
@@ -23,6 +25,7 @@ class ProjectResource extends JsonResource
             'created_at' => (new Carbon($this->created_at))->format('Y-m-d'),
             'due_date' => (new Carbon($this->due_date))->format('Y-m-d'),
             'status' => $this->status,
+            'pinned' => $this->pinned,
             'image_path' => $this->image_path,
             'createdBy' => new UserResource($this->createdBy),
             'updatedBy' => new UserResource($this->updatedBy),

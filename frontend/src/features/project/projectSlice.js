@@ -9,7 +9,7 @@ const initialState = {
   },
   pagination: {
     page: 1,
-    pageSize: null,
+    pageSize: 10,
     total: 0,
     links: "",
   },
@@ -23,7 +23,7 @@ const projectSlice = createSlice({
       state.projects = action.payload;
     },
     setFilters: (state, action) => {
-      state.filters = action.payload;
+      state.filters = { ...state.filters, ...action.payload };
     },
     setPagination: (state, action) => {
       state.pagination = { ...state.pagination, ...action.payload };
@@ -32,10 +32,9 @@ const projectSlice = createSlice({
       state.projects.push(action.payload);
     },
     updateProject: (state, action) => {
-      const index = state.projects.findIndex(
-        (project) => project.id === action.payload.id
+      state.projects = state.projects.map((project) =>
+        project.id === action.payload.id ? action.payload : project
       );
-      if (index !== -1) state.projects[index] = action.payload;
     },
     deleteProject: (state, action) => {
       state.projects = state.projects.filter(
