@@ -20,6 +20,6 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
-        Project::factory()->count(30)->hasTasks(30)->create();
+        Project::factory()->count(10)->hasTasks(20)->create();
     }
 }
