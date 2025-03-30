@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Task;
 use App\Models\Project;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProjectResource;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
-use App\Http\Resources\ProjectResource;
-use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
@@ -18,7 +21,7 @@ class ProjectController extends Controller
     {
         $per_page = request('per_page', 10);
 
-        $projects = Project::query()->orderBy('created_at', 'asc')->paginate($per_page)->onEachSide(1);
+        $projects = Project::query()->orderBy('created_at', 'desc')->paginate($per_page)->onEachSide(1);
 
         return ProjectResource::collection($projects);
     }
@@ -44,15 +47,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Project $project)
-    {
-        //
+        return new ProjectResource($project);
     }
 
     /**
@@ -60,7 +55,37 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project)
     {
-        //
+        $projectData = $request->validated();
+        $projectData['updated_by'] = $request->user()->id;
+
+        if ($request->hasFile('image_path')) {
+            $image = $request->file('image_path');
+
+            // Save new image in the 'public' disk
+            $relativePath = $this->saveImage($image);
+            $projectData['image_path'] = asset('storage/' . str_replace('public/', '', $relativePath));
+
+
+            // Delete old image if it exists
+            if ($project->image_path) {
+                $oldImagePath = str_replace(Storage::url(''), '', $project->image_path);
+                Storage::disk('public')->delete($oldImagePath);
+            }
+        }
+
+        $project->update($projectData);
+
+        return response()->json(['project' => $project, 'message' => 'Project updated successfully']);
+    }
+
+    private function saveImage(\Illuminate\Http\UploadedFile $image)
+    {
+        $path = 'images/projects/' . Str::random();
+
+        // Store the image in the 'public' disk
+        $filePath = Storage::disk('public')->putFileAs($path, $image, $image->getClientOriginalName());
+
+        return $filePath; // This returns 'images/randomString/image.jpg'
     }
 
     /**
@@ -68,6 +93,35 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        //
+
+        // Delete related tasks first
+        Task::where('project_id', $project->id)->delete();
+
+        // Now delete the project
+        $project->delete();
+
+        return response()->json(['message' => 'Project deleted successfully', 'project']);
+    }
+
+    public function getLatestProjects()
+    {
+        $projects = Project::latest()->limit(5)->get();
+
+        return response()->json($projects);
+    }
+
+    public function pinProject(Request $request, Project $project)
+    {
+        $project->pinned = $request->input('pinned');
+        $project->save();
+
+        return response()->json(['pinned' => $project->pinned, 'message' => 'Project pinned status updated successfully']);
+    }
+
+    public function getPinnedProjects()
+    {
+        $projects = Project::query()->where('pinned', 1)->get();
+
+        return response()->json($projects);
     }
 }
