@@ -20,7 +20,23 @@ const AppLayout = ({ children }) => {
   return (
     <div className=" flex h-screen">
       <SidebarProvider>
-        <Toaster />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            unstyled: true,
+            classNames: {
+              success:
+                "flex bg-green-500 text-white shadow-md rounded-md gap-2 font-poppins text-sm border-green-700 px-4 py-2 w-62 relative",
+              error:
+                "bg-red-500 text-white shadow-md rounded-md border border-red-700 p-4 relative",
+              warning:
+                "bg-yellow-500 text-white shadow-md rounded-md border border-yellow-700 p-4 relative",
+              info: "bg-blue-500 text-white shadow-md rounded-md border border-blue-700 p-4 relative",
+              closeButton:
+                "absolute right-4 top-[50%] transform -translate-y-1/2 text-white hover:text-gray-200",
+            },
+          }}
+        />
         <AppSidebar />
         <div className="w-full">
           <SidebarInset className="py-20 relative ">
@@ -47,8 +63,6 @@ const AppLayout = ({ children }) => {
           </SidebarInset>
 
           <main className="relative z-0 flex flex-1 px-12 py-5 overflow-y-auto gap-10 h-screen">
-            {/* <SidebarTrigger className="absolute cursor-pointer z-50 left-5 top-7" /> */}
-
             {children}
           </main>
         </div>
