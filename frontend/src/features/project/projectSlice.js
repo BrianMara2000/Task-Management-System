@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  project: {},
   projects: [],
   filters: {
     search: "",
@@ -19,6 +20,9 @@ const projectSlice = createSlice({
   name: "project",
   initialState,
   reducers: {
+    setProject: (state, action) => {
+      state.project = action.payload;
+    },
     setProjects: (state, action) => {
       state.projects = action.payload;
     },
@@ -32,10 +36,18 @@ const projectSlice = createSlice({
       state.projects.push(action.payload);
     },
     updateProject: (state, action) => {
-      state.projects = state.projects.map((project) =>
-        project.id === action.payload.id ? action.payload : project
-      );
+      state.projects = state.projects
+        .map((project) =>
+          project.id === action.payload.id ? action.payload : project
+        )
+        .filter((project) => {
+          // Apply the current filters
+          return state.filters.status
+            ? project.status === state.filters.status
+            : true;
+        });
     },
+
     deleteProject: (state, action) => {
       state.projects = state.projects.filter(
         (project) => project.id !== action.payload
@@ -45,6 +57,7 @@ const projectSlice = createSlice({
 });
 
 export const {
+  setProject,
   setProjects,
   setFilters,
   setPagination,
