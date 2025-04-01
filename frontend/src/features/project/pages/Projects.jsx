@@ -9,6 +9,7 @@ export default function Projects() {
   const dispatch = useDispatch();
   const projects = useSelector((state) => state.project.projects);
   const pagination = useSelector((state) => state.project.pagination);
+  const filters = useSelector((state) => state.project.filters);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -20,6 +21,8 @@ export default function Projects() {
         params: {
           page: pagination.page,
           per_page: pagination.pageSize,
+          status: filters.status !== "All" ? filters.status : undefined,
+          search: filters.search || "",
         },
       });
 
@@ -38,7 +41,13 @@ export default function Projects() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch, pagination.page, pagination.pageSize]); // Dependencies inside useCallback
+  }, [
+    dispatch,
+    pagination.page,
+    pagination.pageSize,
+    filters.status,
+    filters.search,
+  ]);
 
   useEffect(() => {
     fetchProjects();
@@ -46,20 +55,17 @@ export default function Projects() {
 
   return (
     <div className="container mx-auto w-full py-10">
-      {loading ? (
-        <div>Loading...</div> // Replace this with a Skeleton Loader or Spinner
-      ) : error ? (
-        <div className="text-red-500">{error}</div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={projects}
-          pagination={pagination}
-          setPagination={(newPagination) =>
-            dispatch(setPagination(newPagination))
-          }
-        />
-      )}
+      <DataTable
+        columns={columns}
+        filters={filters}
+        data={projects}
+        pagination={pagination}
+        setPagination={(newPagination) =>
+          dispatch(setPagination(newPagination))
+        }
+        error={error}
+        loading={loading}
+      />
     </div>
   );
 }

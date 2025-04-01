@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   EllipsisVerticalIcon,
+  Folder,
   Pin,
   PinOff,
   SquarePen,
   Trash2Icon,
+  View,
 } from "lucide-react";
 import {
   Dialog,
@@ -25,7 +27,7 @@ import {
   deleteProject as deleteProjectAction,
   updateProject,
 } from "../projectSlice";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "./ImageUpload";
 import { Calendar } from "@/components/ui/calendar";
@@ -51,10 +53,13 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
+import { Link } from "react-router-dom";
 
 export default function Actions({ project }) {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isToggleLoading, setIsToggleLoading] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState({
     name: project.name,
@@ -65,6 +70,7 @@ export default function Actions({ project }) {
     pinned: project.pinned,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState([null]);
 
   const deleteProject = async () => {
     setIsLoading(true);
@@ -84,6 +90,7 @@ export default function Actions({ project }) {
       console.error("Failed to delete project:", error);
     } finally {
       setIsLoading(false);
+      setIsPopoverOpen(false);
     }
   };
 
@@ -97,19 +104,20 @@ export default function Actions({ project }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors(null);
     try {
       const formData = new FormData();
       formData.append("name", selectedProject.name);
-      formData.append("description", selectedProject.description);
+      formData.append("description", selectedProject.description || "");
       formData.append("status", selectedProject.status);
-      formData.append("pinned", selectedProject.pinned);
+      formData.append("pinned", selectedProject.pinned ? "1" : "0");
       if (selectedProject.due_date) {
         formData.append(
           "due_date",
-          format(new Date(selectedProject.due_date), "yyyy-MM-dd")
+          format(new Date(selectedProject.due_date || ""), "yyyy-MM-dd")
         );
       }
-      if (typeof selectedProject.image_path === "object") {
+      if (selectedProject.image_path instanceof File) {
         formData.append("image_path", selectedProject.image_path);
       }
       formData.append("_method", "PUT");
@@ -121,7 +129,6 @@ export default function Actions({ project }) {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-      console.log("Response", project);
       dispatch(
         updateProject({
           ...response.data.project,
@@ -136,17 +143,15 @@ export default function Actions({ project }) {
         closeButton: true,
       });
     } catch (error) {
-      toast.error("Project Update Failed", {
-        closeButton: true,
-      });
-      console.error("Failed to update project:", error);
+      setErrors(error.response?.data.errors);
     } finally {
+      setIsPopoverOpen(false);
       setIsLoading(false);
     }
   };
 
   const togglePinned = async () => {
-    setIsLoading(true);
+    setIsToggleLoading(true);
     try {
       const newPinnedStatus = !selectedProject.pinned;
 
@@ -168,7 +173,7 @@ export default function Actions({ project }) {
         pinned: !prev.pinned,
       }));
     } finally {
-      setIsLoading(false);
+      setIsToggleLoading(false);
     }
   };
 
@@ -179,14 +184,30 @@ export default function Actions({ project }) {
     }));
   }, [project.pinned]);
 
+  useEffect(() => {
+    if (project) {
+      setSelectedProject({
+        name: project.name || "",
+        description: project.description || "",
+        status: project.status || "pending",
+        image_path: project.image_path || "",
+        due_date: project.due_date || null,
+        pinned: project.pinned || false,
+      });
+    }
+  }, [project]);
+
   return (
     <div className="flex items-center gap-2">
-      <Popover>
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-white transition duration-200 ease-in-out hover:bg-indigo-100 hover:text-indigo-600 focus:ring-2 focus:ring-indigo-400">
           <EllipsisVerticalIcon className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
         </PopoverTrigger>
 
-        <PopoverContent className="flex flex-col w-40 p-1 gap-2 bg-white shadow-lg rounded-md">
+        <PopoverContent
+          open={isOpen}
+          className="flex flex-col w-40 p-1 gap-2 bg-white shadow-lg rounded-md"
+        >
           {/* Pin Button */}
           <TooltipProvider>
             <Tooltip>
@@ -195,20 +216,20 @@ export default function Actions({ project }) {
                   onClick={togglePinned}
                   disabled={isLoading}
                   className={`flex items-center gap-2 w-full px-4 py-2 rounded-md transition duration-200 ${
-                    selectedProject.pinned
+                    selectedProject?.pinned
                       ? "bg-yellow-400 text-white hover:bg-yellow-500"
                       : "bg-transparent text-gray-600 hover:bg-gray-100"
                   } ${isLoading ? "cursor-not-allowed" : " "}`}
                 >
-                  {isLoading ? (
+                  {isToggleLoading ? (
                     <Spinner className="ml-10" />
                   ) : selectedProject.pinned ? (
-                    <Pin className="h-5 w-5 text-white" />
+                    <PinOff className="h-5 w-5 text-white" />
                   ) : (
-                    <PinOff className="h-5 w-5 text-gray-600" />
+                    <Pin className="h-5 w-5 text-gray-600" />
                   )}
                   <span>
-                    {isLoading
+                    {isToggleLoading
                       ? "Please wait..."
                       : selectedProject.pinned
                       ? "Unpin"
@@ -223,6 +244,15 @@ export default function Actions({ project }) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          {/* View Project Button */}
+          <Link
+            to={`/app/projects/${project.id}`}
+            className="flex items-center justify-center font-medium text-sm gap-2 w-full px-3 py-2 text-purple-700 bg-transparent rounded-md hover:bg-purple-500 hover:text-white transition duration-200"
+          >
+            <Folder className="h-5 w-5" />
+            <span>View</span>
+          </Link>
 
           {/* Edit Project Button */}
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -268,10 +298,13 @@ export default function Actions({ project }) {
                               : selectedProject.image_path
                           }
                           alt="Project"
-                          className="w-24 h-24 rounded-full object-cover border"
+                          className="w-full rounded object-cover border"
                         />
                       )}
                     </div>
+                    {errors?.image_path && (
+                      <p className="text-sm text-red-600">{errors.name[0]}</p>
+                    )}
 
                     {/* Right: Form Fields */}
                     <div className="flex flex-col gap-4">
@@ -290,6 +323,11 @@ export default function Actions({ project }) {
                           required
                         />
                       </div>
+                      {errors?.name && (
+                        <p className="text-sm text-red-600">
+                          {errors?.name[0]}
+                        </p>
+                      )}
 
                       {/* Description Field */}
                       <div className="flex flex-col gap-2">
@@ -305,6 +343,11 @@ export default function Actions({ project }) {
                           }
                         />
                       </div>
+                      {errors?.description && (
+                        <p className="text-sm text-red-600">
+                          {errors?.description[0]}
+                        </p>
+                      )}
 
                       {/* Due Date Field */}
                       <div className="flex flex-col gap-2">
@@ -332,16 +375,26 @@ export default function Actions({ project }) {
                               mode="single"
                               selected={selectedProject.due_date}
                               onSelect={(date) => {
-                                setSelectedProject((prevProject) => ({
-                                  ...prevProject,
-                                  due_date: date,
-                                }));
+                                if (date >= new Date()) {
+                                  // Prevent selecting past dates
+                                  setSelectedProject((prevProject) => ({
+                                    ...prevProject,
+                                    due_date: date,
+                                  }));
+                                }
                               }}
+                              fromDate={new Date()}
                               initialFocus
                             />
                           </PopoverContent>
                         </Popover>
                       </div>
+                      {errors?.due_date && (
+                        <p className="text-sm text-red-600">
+                          {errors?.due_date[0]}
+                        </p>
+                      )}
+
                       {/* Status Field */}
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="status">Status</Label>
@@ -366,6 +419,11 @@ export default function Actions({ project }) {
                           </SelectContent>
                         </Select>
                       </div>
+                      {errors?.status && (
+                        <p className="text-sm text-red-600">
+                          {errors?.status[0]}
+                        </p>
+                      )}
                     </div>
                   </div>
 

@@ -20,8 +20,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
   Route::get('/projects/latest-projects', [ProjectController::class, 'getLatestProjects']);
   Route::get('/projects/pinned-projects', [ProjectController::class, 'getPinnedProjects']);
-  Route::put('/projects/{project}/pin', [ProjectController::class, 'pinProject']);
   Route::apiResource('/projects', ProjectController::class);
+  Route::put('/projects/{project}/pin', [ProjectController::class, 'pinProject']);
 
   Route::post('users/invite-user', [InviteUserController::class, 'inviteUser']);
 });

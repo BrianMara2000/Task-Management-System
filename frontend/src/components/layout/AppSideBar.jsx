@@ -59,7 +59,7 @@ export function AppSidebar({ ...props }) {
 
   const projectDependencies = useMemo(
     () =>
-      projects.map(({ pinned }) => ({
+      projects?.map(({ pinned }) => ({
         pinned,
       })),
     [projects]

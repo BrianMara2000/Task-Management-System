@@ -46,7 +46,7 @@ export default function ProfileImageUpload({ onUpload }) {
         <img
           src={preview}
           alt="Profile Preview"
-          className="w-32 h-32 object-cover rounded-full mx-auto"
+          className="w-40 h-32 object-cover rounded mx-auto"
         />
       ) : (
         <div className="text-center">
