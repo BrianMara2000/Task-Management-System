@@ -19,9 +19,16 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
-        $per_page = request('per_page', 10);
+        $per_page = $request->input('per_page', 10);
+        $status = $request->input('status', '');
+        $search = $request->input('search', '');
 
-        $projects = Project::query()->orderBy('created_at', 'desc')->paginate($per_page)->onEachSide(1);
+        $query = Project::query()->when($status, fn($query) => $query->where('status', $status))->orderBy('created_at', 'desc');
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $projects = $query->paginate($per_page)->onEachSide(1);
 
         return ProjectResource::collection($projects);
     }
@@ -39,7 +46,21 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
-        //
+        $projectData = $request->validated();
+        $projectData['created_by'] = $request->user()->id;
+        $projectData['updated_by'] = $request->user()->id;
+
+        if ($request->hasFile('image_path')) {
+            $image = $request->file('image_path');
+
+            // Save new image in the 'public' disk
+            $relativePath = $this->saveImage($image);
+            $projectData['image_path'] = asset('storage/' . str_replace('public/', '', $relativePath));
+        }
+
+        $project = Project::create($projectData);
+
+        return response()->json(['project' => $project, 'message' => 'Project created successfully']);
     }
 
     /**
