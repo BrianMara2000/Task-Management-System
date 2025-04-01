@@ -2,7 +2,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import Actions from "./Actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatStatus } from "@/constants/constants";
+import { formatStatus, getColorFromName } from "@/constants/constants";
 
 const columnHelper = createColumnHelper();
 
@@ -33,20 +33,26 @@ export const columns = [
       />
     ),
   },
-  columnHelper.accessor("id", {
-    header: "ID",
-    cell: ({ row }) => <span>{row.original.id}</span>,
-  }),
+  // columnHelper.accessor("id", {
+  //   header: "ID",
+  //   cell: ({ row }) => <span>{row.original.id}</span>,
+  // }),
   columnHelper.accessor("image_path", {
     header: "Image",
     cell: ({ row }) => (
-      <Avatar className="w-10 h-10">
+      <Avatar className="rounded w-14 h-10">
         <AvatarImage
           src={row.original.image_path}
           alt={row.original.name}
           className="w-full h-full object-cover"
         />
-        <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
+        <AvatarFallback
+          className={`rounded w-14 h-10 ${getColorFromName(
+            row.original.name
+          )} text-white font-bold`}
+        >
+          {row.original.name.charAt(0)}
+        </AvatarFallback>
       </Avatar>
     ),
   }),

@@ -29,23 +29,56 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataTablePagination } from "@/components/core/pagination";
 import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { axiosClient } from "@/axios";
 import { toast } from "sonner";
+import { PlusIcon, Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { addProject, setFilters } from "../projectSlice";
+import ImageUpload from "./ImageUpload";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { formatStatus } from "@/constants/constants";
+import { useDebounce } from "@/hooks/useDebounce";
 
-export function DataTable({ columns, data, pagination, setPagination }) {
+export function DataTable({
+  columns,
+  data,
+  pagination,
+  setPagination,
+  filters,
+  error,
+  loading,
+}) {
   const [sorting, setSorting] = useState([]);
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [errors, setErrors] = useState(null);
+  const [newProject, setNewProject] = useState({
+    name: "",
+    description: "",
+    status: "",
+    image_path: "",
+    created_at: "",
+    due_date: "",
+    pinned: false,
+  });
+  const [localSearch, setLocalSearch] = useState(filters.search || "");
+  const debouncedSearch = useDebounce(localSearch, 500);
 
   const table = useReactTable({
     data,
@@ -65,28 +98,70 @@ export function DataTable({ columns, data, pagination, setPagination }) {
     rowCount: pagination.total, // ✅ Total rows from backend
   });
 
+  const handleUpload = (file) => {
+    setNewProject((prevProject) => ({
+      ...prevProject,
+      image_path: file,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
+    setErrors(null);
 
     try {
-      await axiosClient.post("/users/invite-user", {
-        email,
-      });
+      const formData = new FormData();
+      formData.append("name", newProject.name);
+      formData.append("description", newProject.description);
+      formData.append("status", newProject.status);
+      formData.append("pinned", newProject.pinned);
+      if (newProject.due_date) {
+        formData.append(
+          "due_date",
+          format(new Date(newProject.due_date), "yyyy-MM-dd")
+        );
+      }
+      if (typeof newProject.image_path === "object") {
+        formData.append("image_path", newProject.image_path);
+      }
 
-      toast("User Invited", {
-        description: "The user has been invited successfully.",
-        type: "success",
+      const response = await axiosClient.post(`/projects`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      setEmail("");
+      dispatch(
+        addProject({
+          ...response.data.project,
+          created_at: format(
+            new Date(response.data.project.created_at),
+            "yyyy-MM-dd"
+          ),
+        })
+      );
+      setIsOpen(false);
+      toast.success("Project Created", {
+        closeButton: true,
+      });
     } catch (error) {
-      console.error("Failed to invite user:", error);
-      setError(error.response?.data?.errors?.email || "An error occurred");
+      setErrors(error.response?.data?.errors);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const updatedFilters = useMemo(
+    () => ({
+      ...filters,
+      search: debouncedSearch,
+    }),
+    [debouncedSearch, filters]
+  );
+
+  useEffect(() => {
+    if (filters.search !== debouncedSearch) {
+      dispatch(setFilters(updatedFilters));
+    }
+  }, [updatedFilters, dispatch, debouncedSearch, filters.search]);
 
   return (
     <div>
@@ -117,51 +192,217 @@ export function DataTable({ columns, data, pagination, setPagination }) {
             </SelectContent>
           </Select>
         </div>
-        <Dialog>
+        <div className="flex items-center space-x-2">
+          <p className="text-sm font-medium">Filter by status</p>
+          <Select
+            value={filters.status}
+            onValueChange={(value) => {
+              dispatch(
+                setFilters({
+                  ...filters,
+                  status: value,
+                })
+              );
+            }}
+          >
+            <SelectTrigger className="h-8 w-[100px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent side="top">
+              {["All", "pending", "in_progress", "completed"].map((status) => (
+                <SelectItem key={status} value={`${status}`}>
+                  {formatStatus(status)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Input
+          placeholder="Search projects..."
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          className="h-8 w-[150px] lg:w-[250px]"
+        />
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button
-              // onClick={inviteUser}
-              className="cursor-pointer bg-purple-500"
-            >
-              Invite User
+            <Button className="flex items-center gap-2 px-3 py-2 text-white bg-purple-500 rounded-md hover:bg-purple-400 hover:text-white transition duration-200">
+              <PlusIcon />
+              <span>New Project</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+
+          <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
-              <DialogTitle>Invite User</DialogTitle>
+              <DialogTitle>Add New Project</DialogTitle>
               <DialogDescription>
-                Enter the user's email below to send an invitation.
+                Add your new project here. Click save when you're done.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} encType="multipart/form-data">
+
+            {/* Form Content */}
+            {isLoading ? (
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Email
-                  </Label>
-                  <Input
-                    id="name"
-                    className="col-span-3"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <Skeleton className="w-24 h-24 rounded-full mx-auto" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-12 w-full" />
               </div>
-              <DialogFooter>
-                <Button
-                  className="bg-purple-500"
-                  type="submit"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Please wait..." : "Invite"}
-                </Button>
-              </DialogFooter>
-            </form>
+            ) : (
+              <form onSubmit={handleSubmit} encType="multipart/form-data">
+                <div className="grid sm:grid-cols-1 md:grid-cols-2  gap-6 py-4">
+                  {/* Left: Image Upload */}
+                  <div className="flex flex-col justify-center items-center gap-4">
+                    <ImageUpload onUpload={handleUpload} />
+                    {newProject.image_path && (
+                      <img
+                        src={
+                          newProject.image_path instanceof File
+                            ? URL.createObjectURL(newProject.image_path)
+                            : newProject.image_path?.startsWith("/storage/")
+                            ? `http://localhost:8000${newProject.image_path}`
+                            : newProject.image_path
+                        }
+                        alt="Project"
+                        className="w-full rounded object-cover border"
+                      />
+                    )}
+                    {errors?.image_path && (
+                      <p className="text-sm text-red-600">
+                        {errors.image_path[0]}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Right: Form Fields */}
+                  <div className="flex flex-col gap-4">
+                    {/* Name Field */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="name">Project Name</Label>
+                      <Input
+                        id="name"
+                        value={newProject.name}
+                        onChange={(e) =>
+                          setNewProject((prevProject) => ({
+                            ...prevProject,
+                            name: e.target.value,
+                          }))
+                        }
+                        // required
+                      />
+                    </div>
+                    {errors?.name && (
+                      <p className="text-sm text-red-600">{errors?.name[0]}</p>
+                    )}
+
+                    {/* Description Field */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={newProject.description}
+                        onChange={(e) =>
+                          setNewProject((prevProject) => ({
+                            ...prevProject,
+                            description: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    {errors?.description && (
+                      <p className="text-sm text-red-600">
+                        {errors?.description[0]}
+                      </p>
+                    )}
+
+                    {/* Due Date Field */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="dueDate">Due Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !newProject.due_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {newProject.due_date ? (
+                              format(new Date(newProject.due_date), "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={newProject.due_date}
+                            onSelect={(date) => {
+                              setNewProject((prevProject) => ({
+                                ...prevProject,
+                                due_date: date,
+                              }));
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    {errors?.due_date && (
+                      <p className="text-sm text-red-600">
+                        {errors?.due_date[0]}
+                      </p>
+                    )}
+
+                    {/* Status Field */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={newProject.status}
+                        onValueChange={(value) =>
+                          setNewProject((prev) => ({
+                            ...prev,
+                            status: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="in_progress">
+                            In Progress
+                          </SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {errors?.status && (
+                      <p className="text-sm text-red-600">
+                        {errors?.status[0]}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <DialogFooter>
+                  <Button
+                    className="bg-purple-500 w-full md:w-auto rounded-md shadow-md"
+                    type="submit"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Saving..." : "Save Changes"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
       </div>
+
       <div className="rounded-md border p-2">
         <Table>
           <TableHeader>
@@ -181,7 +422,25 @@ export function DataTable({ columns, data, pagination, setPagination }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {!data || loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center h-24"
+                >
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center h-24 text-red-500"
+                >
+                  {error}
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
@@ -212,11 +471,17 @@ export function DataTable({ columns, data, pagination, setPagination }) {
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <DataTablePagination
-          table={table}
-          setPagination={setPagination}
-          pagination={pagination}
-        />
+        {!pagination || loading ? (
+          <div></div>
+        ) : error ? (
+          <div className="text-red-500">{error}</div>
+        ) : (
+          <DataTablePagination
+            table={table}
+            setPagination={setPagination}
+            pagination={pagination}
+          />
+        )}
       </div>
     </div>
   );
