@@ -23,7 +23,7 @@ class ProjectResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'created_at' => (new Carbon($this->created_at))->format('Y-m-d'),
-            'due_date' => (new Carbon($this->due_date))->format('Y-m-d'),
+            'due_date' => $this->due_date ? (new Carbon($this->due_date))->format('Y-m-d') : null,
             'status' => $this->status,
             'pinned' => $this->pinned,
             'image_path' => $this->image_path,
