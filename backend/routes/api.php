@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InviteUserController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -22,6 +23,9 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::get('/projects/pinned-projects', [ProjectController::class, 'getPinnedProjects']);
   Route::apiResource('/projects', ProjectController::class);
   Route::put('/projects/{project}/pin', [ProjectController::class, 'pinProject']);
+
+  Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
+
 
   Route::post('users/invite-user', [InviteUserController::class, 'inviteUser']);
 });
