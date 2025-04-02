@@ -36,17 +36,22 @@ const projectSlice = createSlice({
       state.projects.push(action.payload);
     },
     updateProject: (state, action) => {
-      state.projects = state.projects
-        .map((project) =>
-          project.id === action.payload.id ? action.payload : project
-        )
-        .filter((project) => {
-          // Apply the current filters
-          return state.filters.status
-            ? project.status === state.filters.status
-            : true;
-        });
+      state.projects = state.projects.map((project) =>
+        project.id === action.payload.id ? action.payload : project
+      );
     },
+    // updateProject: (state, action) => {
+    //   state.projects = state.projects
+    //     .map((project) =>
+    //       project.id === action.payload.id ? action.payload : project
+    //     )
+    //     .filter((project) => {
+    //       // Apply the current filters
+    //       return state.filters.status
+    //         ? project.status === state.filters.status
+    //         : true;
+    //     });
+    // },
 
     deleteProject: (state, action) => {
       state.projects = state.projects.filter(
