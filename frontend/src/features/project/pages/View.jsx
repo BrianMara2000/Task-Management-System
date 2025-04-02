@@ -9,6 +9,7 @@ import { Pencil } from "lucide-react";
 import { setProject } from "../projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getColorFromName } from "@/constants/constants";
+import Tasks from "@/features/task/pages/Tasks";
 
 const View = () => {
   const { projectId } = useParams(); // Get project ID from URL
@@ -82,23 +83,12 @@ const View = () => {
               <TabsTrigger value="board">Board</TabsTrigger>
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
             </TabsList>
-            <TabsContent value="table">table</TabsContent>
+            <TabsContent value="table">
+              <Tasks projectId={projectId} />
+            </TabsContent>
             <TabsContent value="board">Board</TabsContent>
             <TabsContent value="calendar">Calendar</TabsContent>
           </Tabs>
-        </div>
-
-        {/* Filters & New Task Button */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-2">
-            <Button variant="outline">All Statuses</Button>
-            <Button variant="outline">All Assignees</Button>
-            <Button variant="outline">All Projects</Button>
-            <Button variant="outline">Due Date</Button>
-          </div>
-          <Button variant="default" className="bg-blue-500">
-            + New
-          </Button>
         </div>
       </div>
     </>

@@ -9,6 +9,12 @@ export const formatStatus = (status) => {
   return statuses[status] || status.toUpperCase(); // Default to uppercase if not in the list
 };
 
+export const statusColors = {
+  Pending: "bg-yellow-500 text-white",
+  In_Progress: "bg-blue-500 text-white",
+  Completed: "bg-green-500 text-white",
+};
+
 export const getColorFromName = (name) => {
   const colors = [
     "bg-red-500",
@@ -26,4 +32,20 @@ export const getColorFromName = (name) => {
     ?.split("")
     .reduce((acc, char) => char.charCodeAt(0) + acc, 0);
   return colors[hash % colors.length];
+};
+
+export const formatPriority = (priority) => {
+  const priorities = {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+  };
+
+  return priorities[priority] || priority.toUpperCase();
+};
+
+export const priorityColors = {
+  Low: "text-green-500",
+  Medium: "text-yellow-500",
+  High: "text-red-500",
 };
