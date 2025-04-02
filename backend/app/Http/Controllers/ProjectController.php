@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Models\Project;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
 use Illuminate\Support\Facades\Storage;
@@ -87,10 +88,29 @@ class ProjectController extends Controller
             $projectData['image_path'] = asset('storage/' . str_replace('public/', '', $relativePath));
 
 
-            // Delete old image if it exists
             if ($project->image_path) {
-                $oldImagePath = str_replace(Storage::url(''), '', $project->image_path);
-                Storage::disk('public')->delete($oldImagePath);
+                // Convert full URL to relative storage path
+                $oldImagePath = str_replace(url('/'), '', $project->image_path);
+                $oldImagePath = ltrim($oldImagePath, '/'); // Remove leading slash
+
+                // Ensure correct path for deletion
+                $storagePath = str_replace('storage/', '', $oldImagePath); // Remove 'storage/' prefix
+
+                if (Storage::disk('public')->exists($storagePath)) {
+                    Storage::disk('public')->delete($storagePath); // Delete the image file
+
+                    // Extract directory path
+                    $directoryPath = dirname($storagePath);
+
+                    // Check if directory is empty before deleting
+                    if (count(Storage::disk('public')->files($directoryPath)) === 0) {
+                        Storage::disk('public')->deleteDirectory($directoryPath);
+                    }
+                } else {
+                    Log::warning("Image not found after path adjustment: " . $storagePath);
+                }
+
+                Log::info("Final Image Path to be deleted: " . $storagePath);
             }
         }
 
@@ -106,7 +126,7 @@ class ProjectController extends Controller
         // Store the image in the 'public' disk
         $filePath = Storage::disk('public')->putFileAs($path, $image, $image->getClientOriginalName());
 
-        return $filePath; // This returns 'images/randomString/image.jpg'
+        return $filePath;
     }
 
     /**
@@ -114,15 +134,42 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-
         // Delete related tasks first
         Task::where('project_id', $project->id)->delete();
 
-        // Now delete the project
+        // Delete the image if it exists
+        if ($project->image_path) {
+            // Convert full URL to relative storage path
+            $oldImagePath = str_replace(url('/'), '', $project->image_path);
+            $oldImagePath = ltrim($oldImagePath, '/'); // Remove leading slash
+
+            // Ensure correct path for deletion
+            $storagePath = str_replace('storage/', '', $oldImagePath); // Remove 'storage/' prefix
+
+            if (Storage::disk('public')->exists($storagePath)) {
+                Storage::disk('public')->delete($storagePath); // Delete the image file
+
+                // Extract directory path
+                $directoryPath = dirname($storagePath);
+
+                // Check if directory is empty before deleting
+                if (count(Storage::disk('public')->files($directoryPath)) === 0) {
+                    Storage::disk('public')->deleteDirectory($directoryPath);
+                }
+            } else {
+                Log::warning("Image not found after path adjustment: " . $storagePath);
+            }
+
+            Log::info("Final Image Path to be deleted: " . $storagePath);
+        }
+
+        // Delete the project
         $project->delete();
 
-        return response()->json(['message' => 'Project deleted successfully', 'project']);
+        return response()->json(['message' => 'Project deleted successfully']);
     }
+
+
 
     public function getLatestProjects()
     {
