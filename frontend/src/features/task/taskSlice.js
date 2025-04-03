@@ -36,13 +36,9 @@ const taskSlice = createSlice({
       state.tasks.push(action.payload);
     },
     updateTask: (state, action) => {
-      state.tasks = state.tasks
-        .map((task) => (task.id === action.payload.id ? action.payload : task))
-        .filter((task) => {
-          return state.filters.status
-            ? task.status === state.filters.status
-            : true;
-        });
+      state.tasks = state.tasks.map((task) =>
+        task.id === action.payload.id ? action.payload : task
+      );
     },
 
     deleteTask: (state, action) => {
