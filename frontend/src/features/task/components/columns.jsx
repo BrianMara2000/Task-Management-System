@@ -4,12 +4,17 @@ import Actions from "./Actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   formatPriority,
-  formatStatus,
   getColorFromName,
   priorityColors,
-  statusColors,
 } from "@/constants/constants";
-import { CircleIcon, DotIcon, TriangleAlert } from "lucide-react";
+import {
+  CircleAlertIcon,
+  CircleIcon,
+  DotIcon,
+  TriangleAlert,
+} from "lucide-react";
+
+import StatusUpdate from "./StatusUpdate";
 
 const columnHelper = createColumnHelper();
 
@@ -63,34 +68,63 @@ export const columns = [
     minSize: 100, // Minimum width
     maxSize: 200,
   }),
-  {
-    accessorKey: "status", // ✅ This makes getValue() work
+  columnHelper.display({
+    id: "status",
     header: "Task Status",
-    cell: (info) => {
-      const status = formatStatus(info.getValue()) || "No Status";
-      const statusClass = statusColors[status];
+    cell: ({ row }) => <StatusUpdate task={row.original} />,
+  }),
 
-      return (
-        <span className={`px-3 py-2 rounded ${statusClass}`}>{status}</span>
-      );
-    },
+  {
+    accessorKey: "assigned_user",
+    header: () => (
+      <span className="flex items-center whitespace-nowrap">Assignee</span>
+    ),
+    cell: ({ row }) => (
+      <Avatar className="rounded w-full gap-x-3 h-10 flex items-center">
+        <AvatarImage
+          src={row.original.assigned_user.profile_image}
+          alt={row.original.assigned_user.name}
+          className="rounded-full w-8 h-8 object-cover"
+        />
+        <span className="hidden sm:inline text-sm font-medium">
+          {row.original.assigned_user.name}
+        </span>
+        <AvatarFallback
+          className={`rounded-full w-8 h-8 ${getColorFromName(
+            row.original.assigned_user.name
+          )} text-white font-bold`}
+        >
+          {row.original.assigned_user.name.charAt(0)}
+        </AvatarFallback>
+      </Avatar>
+    ),
   },
 
   {
-    accessorKey: "priority", // ✅ This makes getValue() work
-    header: "Priority",
+    accessorKey: "priority",
+    header: () => (
+      <span className="flex px-3 items-center whitespace-nowrap justify-start">
+        Priority
+      </span>
+    ),
+
     cell: (info) => {
       const priority = formatPriority(info.getValue()) || "No Status";
       const priorityClass = priorityColors[priority];
 
       return (
         <span
-          className={`px-3 py-2 flex items-center gap-2 rounded font-bold ${priorityClass}`}
+          className={`px-3 py-2 flex items-center gap-2 rounded font-bold text-sm ${priorityClass}`}
         >
           {priority === "High" ? (
             <TriangleAlert />
+          ) : priority === "Low" ? (
+            <CircleIcon
+              fill="currentColor"
+              className="w-3 h-3 ml-1 text-center"
+            />
           ) : (
-            <CircleIcon fill="currentColor" className="w-3 h-3" />
+            <CircleAlertIcon className="w-5 h-5" />
           )}
           {priority}
         </span>

@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::put('/projects/{project}/pin', [ProjectController::class, 'pinProject']);
 
   Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
+  Route::put('/tasks/{task}', [TaskController::class, 'update']);
+  Route::patch('/tasks/{task}', [TaskController::class, 'statusUpdate']);
 
 
   Route::post('users/invite-user', [InviteUserController::class, 'inviteUser']);

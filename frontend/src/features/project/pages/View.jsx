@@ -13,7 +13,6 @@ import Tasks from "@/features/task/pages/Tasks";
 
 const View = () => {
   const { projectId } = useParams(); // Get project ID from URL
-  // const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const project = useSelector((state) => state.project.project);
 

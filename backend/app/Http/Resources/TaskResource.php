@@ -28,7 +28,7 @@ class TaskResource extends JsonResource
             'image_path' => $this->image_path,
             'createdBy' => new UserResource(User::find($this->created_by)),
             'updatedBy' => new UserResource(User::find($this->updated_by)),
-            "assigned_user_id" => $this->assigned_user_id,
+            "assigned_user" => new UserResource(User::find($this->assigned_user_id)),
         ];
     }
 }
