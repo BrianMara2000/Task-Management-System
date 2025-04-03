@@ -4,6 +4,7 @@ import { DataTable } from "@/features/task/components/data-table";
 import { axiosClient } from "@/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setPagination, setTasks } from "@/features/task/taskSlice";
+import { setUsers } from "@/features/user/userSlice";
 
 export default function Tasks({ projectId }) {
   const dispatch = useDispatch();
@@ -53,6 +54,22 @@ export default function Tasks({ projectId }) {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  const fetchUsers = useCallback(async () => {
+    // setLoading(true);
+    // setError(null);
+    try {
+      const response = await axiosClient.get(`/users`);
+
+      dispatch(setUsers(response.data.users.data));
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  }, [dispatch]); // Dependencies inside useCallback
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   return (
     <div className="container mx-auto w-full py-10">
