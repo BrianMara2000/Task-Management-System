@@ -156,11 +156,14 @@ class ProjectController extends Controller
                 if (count(Storage::disk('public')->files($directoryPath)) === 0) {
                     Storage::disk('public')->deleteDirectory($directoryPath);
                 }
-            } else {
-                Log::warning("Image not found after path adjustment: " . $storagePath);
             }
 
-            Log::info("Final Image Path to be deleted: " . $storagePath);
+            // Uncomment the following lines if you want to log the image deletion process
+            //  else {
+            //     Log::warning("Image not found after path adjustment: " . $storagePath);
+            // }
+
+            // Log::info("Final Image Path to be deleted: " . $storagePath);
         }
 
         // Delete the project

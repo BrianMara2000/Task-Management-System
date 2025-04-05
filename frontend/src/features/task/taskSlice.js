@@ -5,8 +5,9 @@ const initialState = {
   tasks: [],
   filters: {
     search: "",
-    role: "",
-    status: "",
+    status: [],
+    priority: [],
+    assignee: [],
   },
   pagination: {
     page: 1,
@@ -27,7 +28,19 @@ const taskSlice = createSlice({
       state.tasks = action.payload;
     },
     setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
+      // This will merge the new filters with existing ones
+      state.filters = {
+        ...state.filters,
+        ...action.payload,
+      };
+    },
+    // Add a new reducer to clear specific filters if needed
+    clearFilter: (state, action) => {
+      const { category } = action.payload;
+      state.filters = {
+        ...state.filters,
+        [category]: [],
+      };
     },
     setPagination: (state, action) => {
       state.pagination = { ...state.pagination, ...action.payload };

@@ -10,6 +10,7 @@ export default function Tasks({ projectId }) {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.task.tasks);
   const pagination = useSelector((state) => state.task.pagination);
+  const users = useSelector((state) => state.user.users);
   const filters = useSelector((state) => state.task.filters);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,6 +24,8 @@ export default function Tasks({ projectId }) {
           page: pagination.page,
           per_page: pagination.pageSize,
           status: filters.status !== "All" ? filters.status : undefined,
+          assignee: filters.assignee !== "All" ? filters.assignee : undefined,
+          priority: filters.priority !== "All" ? filters.priority : undefined,
           search: filters.search || "",
         },
       });
@@ -83,6 +86,7 @@ export default function Tasks({ projectId }) {
         }
         error={error}
         loading={loading}
+        users={users}
       />
     </div>
   );

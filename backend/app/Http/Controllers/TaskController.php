@@ -22,10 +22,14 @@ class TaskController extends Controller
         $per_page = $request->input('per_page', 10);
         $status = $request->input('status', '');
         $search = $request->input('search', '');
+        $assignee = $request->input('assignee', '');
+        $priority = $request->input('priority', '');
 
-        $tasks = Task::query()->with(['project'])
+        $tasks = Task::query()->with(['project', 'user'])
             ->where('project_id', $project->id)
-            ->when($status, fn($query) => $query->where('status', $status))
+            ->when($status, fn($query) => $query->whereIn('status', (array) $status))
+            ->when($assignee, fn($query) => $query->whereIn('assigned_user_id', (array) $assignee))
+            ->when($priority, fn($query) => $query->whereIn('priority', (array) $priority))
             ->when($search, fn($query) => $query->where('name', 'like', "%{$search}%"))->orderBy('created_at', 'desc')
             ->paginate($per_page)->onEachSide(1);
 
@@ -123,7 +127,38 @@ class TaskController extends Controller
      */
     public function destroy(Task $task)
     {
-        //
+        // Delete the image if it exists
+        if ($task->image_path) {
+            // Convert full URL to relative storage path
+            $oldImagePath = str_replace(url('/'), '', $task->image_path);
+            $oldImagePath = ltrim($oldImagePath, '/'); // Remove leading slash
+
+            // Ensure correct path for deletion
+            $storagePath = str_replace('storage/', '', $oldImagePath); // Remove 'storage/' prefix
+
+            if (Storage::disk('public')->exists($storagePath)) {
+                Storage::disk('public')->delete($storagePath); // Delete the image file
+
+                // Extract directory path
+                $directoryPath = dirname($storagePath);
+
+                // Check if directory is empty before deleting
+                if (count(Storage::disk('public')->files($directoryPath)) === 0) {
+                    Storage::disk('public')->deleteDirectory($directoryPath);
+                }
+            }
+
+            // Uncomment the following lines if you want to log the image deletion process
+
+            // else {
+            //     Log::warning("Image not found after path adjustment: " . $storagePath);
+            // }
+
+            // Log::info("Final Image Path to be deleted: " . $storagePath);
+        }
+
+        $task->delete();
+        return response()->json(['message' => 'Task deleted successfully']);
     }
 
     public function statusUpdate(Task $task)
