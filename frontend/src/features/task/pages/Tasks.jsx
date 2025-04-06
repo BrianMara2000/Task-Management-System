@@ -45,14 +45,7 @@ export default function Tasks({ projectId }) {
     } finally {
       setLoading(false);
     }
-  }, [
-    dispatch,
-    pagination.page,
-    pagination.pageSize,
-    filters.status,
-    filters.search,
-    projectId,
-  ]);
+  }, [dispatch, pagination.page, pagination.pageSize, filters, projectId]);
 
   useEffect(() => {
     fetchTasks();
