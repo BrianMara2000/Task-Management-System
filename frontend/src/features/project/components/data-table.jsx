@@ -259,7 +259,9 @@ export function DataTable({
                           newProject.image_path instanceof File
                             ? URL.createObjectURL(newProject.image_path)
                             : newProject.image_path?.startsWith("/storage/")
-                            ? `http://localhost:8000${newProject.image_path}`
+                            ? `${import.meta.env.VITE_API_BASE_URL}${
+                                newProject.image_path
+                              }`
                             : newProject.image_path
                         }
                         alt="Project"

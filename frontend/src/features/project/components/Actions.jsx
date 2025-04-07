@@ -294,7 +294,9 @@ export default function Actions({ project }) {
                               : selectedProject.image_path?.startsWith(
                                   "/storage/"
                                 )
-                              ? `http://localhost:8000${selectedProject.image_path}`
+                              ? `${import.meta.env.VITE_API_BASE_URL}${
+                                  selectedProject.image_path
+                                }`
                               : selectedProject.image_path
                           }
                           alt="Project"
