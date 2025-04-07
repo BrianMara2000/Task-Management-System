@@ -128,7 +128,7 @@ export default function Actions({ task }) {
         })
       );
       setIsOpen(false);
-      toast.success("task Updated", {
+      toast.success("Task Updated", {
         closeButton: true,
       });
     } catch (error) {
@@ -205,7 +205,9 @@ export default function Actions({ task }) {
                                 : selectedTask.image_path?.startsWith(
                                     "/storage/"
                                   )
-                                ? `http://localhost:8000${selectedTask.image_path}`
+                                ? `${import.meta.env.VITE_API_BASE_URL}${
+                                    selectedTask.image_path
+                                  }`
                                 : selectedTask.image_path
                             }
                             alt="task"

@@ -86,9 +86,7 @@ export const columns = [
           alt={row.original.assigned_user.name}
           className="rounded-full w-8 h-8 object-cover"
         />
-        <span className="hidden sm:inline text-sm font-medium">
-          {row.original.assigned_user.name}
-        </span>
+
         <AvatarFallback
           className={`rounded-full w-8 h-8 ${getColorFromName(
             row.original.assigned_user.name
@@ -96,6 +94,9 @@ export const columns = [
         >
           {row.original.assigned_user.name.charAt(0)}
         </AvatarFallback>
+        <span className="hidden sm:inline text-sm font-medium">
+          {row.original.assigned_user.name}
+        </span>
       </Avatar>
     ),
   },
