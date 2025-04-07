@@ -80,6 +80,7 @@ export default function Tasks({ projectId }) {
         error={error}
         loading={loading}
         users={users}
+        projectId={projectId}
       />
     </div>
   );
