@@ -46,7 +46,8 @@ const taskSlice = createSlice({
       state.pagination = { ...state.pagination, ...action.payload };
     },
     addTask: (state, action) => {
-      state.tasks.push(action.payload);
+      state.tasks.unshift(action.payload);
+      state.pagination.total += 1;
     },
     updateTask: (state, action) => {
       state.tasks = state.tasks.map((task) =>
