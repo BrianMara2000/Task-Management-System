@@ -48,9 +48,25 @@ class TaskController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTaskRequest $request)
+    public function store(StoreTaskRequest $request, Project $project)
     {
-        //
+        $taskData = $request->validated();
+        $taskData['created_by'] = $request->user()->id;
+        $taskData['updated_by'] = $request->user()->id;
+
+        if ($request->hasFile('image_path')) {
+            $image = $request->file('image_path');
+
+            // Save new image in the 'public' disk
+            $relativePath = $this->saveImage($image);
+            $taskData['image_path'] = asset('storage/' . str_replace('public/', '', $relativePath));
+        }
+        // $task->assigned_user_id = $taskData['assignee'];
+        $taskData['project_id'] = $project->id;
+        $taskData['assigned_user_id'] = $taskData['assignee'];
+        $task = Task::create($taskData);
+
+        return response()->json(['task' => new TaskResource($task), 'message' => 'task created successfully']);
     }
 
     /**
