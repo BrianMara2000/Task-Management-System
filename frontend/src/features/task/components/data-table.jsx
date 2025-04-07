@@ -82,6 +82,7 @@ export function DataTable({
   error,
   loading,
   users,
+  projectId,
 }) {
   const [sorting, setSorting] = useState([]);
   const dispatch = useDispatch();
@@ -211,14 +212,18 @@ export function DataTable({
         formData.append("image_path", newTask.image_path);
       }
 
-      const response = await axiosClient.post(`/Tasks`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axiosClient.post(
+        `/projects/${projectId}/tasks`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
       dispatch(
         addTask({
-          ...response.data.Task,
+          ...response.data.task,
           created_at: format(
-            new Date(response.data.Task.created_at),
+            new Date(response.data.task.created_at),
             "yyyy-MM-dd"
           ),
         })
@@ -258,10 +263,6 @@ export function DataTable({
       dispatch(setFilters(updatedFilters));
     }
   }, [updatedFilters, dispatch, debouncedSearch, filters.search]);
-
-  useEffect(() => {
-    console.log("Filters updated:", filters);
-  }, [filters]);
 
   return (
     <div>
@@ -329,12 +330,12 @@ export function DataTable({
             placeholder="Search Tasks..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-[150px] lg:w-[250px] py-4"
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="px-4 py-2 flex items-center gap-2 bg-gray-200 rounded-md">
-                <FilterIcon />
+              <button className="px-3 py-2 flex items-center gap-2 border-2 rounded-md font-poppins hover:bg-gray-200 font-semibold text-sm text-gray-700 transition duration-200 cursor-pointer">
+                <FilterIcon className="w-5 h-5" />
                 <span>Filter</span>
               </button>
             </DropdownMenuTrigger>
@@ -399,7 +400,9 @@ export function DataTable({
                             newTask.image_path instanceof File
                               ? URL.createObjectURL(newTask.image_path)
                               : newTask.image_path?.startsWith("/storage/")
-                              ? `http://localhost:8000${newTask.image_path}`
+                              ? `${import.meta.env.VITE_API_BASE_URL}${
+                                  newTask.image_path
+                                }`
                               : newTask.image_path
                           }
                           alt="Task"
@@ -497,35 +500,119 @@ export function DataTable({
                         </p>
                       )}
 
-                      {/* Status Field */}
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="status">Status</Label>
+                      {/* Assignee Field */}
+                      <div className="flex flex-col gap-2 w-full">
+                        <Label htmlFor="dueDate">Assign to</Label>
                         <Select
-                          value={newTask.status}
-                          onValueChange={(value) =>
+                          className="w-full p-2"
+                          value={newTask.assignee}
+                          onValueChange={(value) => {
+                            console.log(value);
                             setNewTask((prev) => ({
                               ...prev,
-                              status: value,
-                            }))
-                          }
+                              assignee: Number(value),
+                            }));
+                          }}
                         >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select Status" />
+                          <SelectTrigger className="w-full py-5">
+                            <SelectValue placeholder="Select Assignee" />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="in_progress">
-                              In Progress
-                            </SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
+                          <SelectContent side="bottom" align="start">
+                            {users.map((user) => (
+                              <SelectItem
+                                value={user.id}
+                                className="flex items-center gap-10 border-b border-gray-200 p-2"
+                                key={user.id}
+                              >
+                                <Avatar>
+                                  <AvatarImage
+                                    src={user.profile_image}
+                                    alt={user.name}
+                                    className="rounded-full w-full h-full object-cover"
+                                  />
+                                  <AvatarFallback
+                                    className={`w-full h-full flex items-center justify-center rounded-full ${getColorFromName(
+                                      user.name
+                                    )} text-white font-bold`}
+                                  >
+                                    {user.name.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-medium">
+                                  {user.name}
+                                </span>
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
+                        {errors?.assignee && (
+                          <p className="text-sm text-red-600">
+                            {errors?.assignee[0]}
+                          </p>
+                        )}
                       </div>
-                      {errors?.status && (
-                        <p className="text-sm text-red-600">
-                          {errors?.status[0]}
-                        </p>
-                      )}
+
+                      <div className="flex justify-between items-center gap-x-10">
+                        {/* Status Field */}
+                        <div className="w-full flex flex-col gap-2">
+                          <Label htmlFor="status">Status</Label>
+                          <Select
+                            value={newTask.status}
+                            onValueChange={(value) =>
+                              setNewTask((prev) => ({
+                                ...prev,
+                                status: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="in_progress">
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value="completed">
+                                Completed
+                              </SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {errors?.status && (
+                            <p className="text-sm text-red-600">
+                              {errors?.status[0]}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Priority Field */}
+                        <div className=" w-full flex flex-col gap-2">
+                          <Label htmlFor="status">Priority</Label>
+                          <Select
+                            value={newTask.priority}
+                            onValueChange={(value) =>
+                              setNewTask((prev) => ({
+                                ...prev,
+                                priority: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select Priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {errors?.priority && (
+                            <p className="text-sm text-red-600">
+                              {errors?.priority[0]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 

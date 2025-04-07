@@ -33,7 +33,8 @@ const projectSlice = createSlice({
       state.pagination = { ...state.pagination, ...action.payload };
     },
     addProject: (state, action) => {
-      state.projects.push(action.payload);
+      state.projects.unshift(action.payload);
+      state.pagination.total += 1;
     },
     updateProject: (state, action) => {
       state.projects = state.projects.map((project) =>
