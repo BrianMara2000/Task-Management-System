@@ -48,11 +48,11 @@ import { PlusIcon, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { addProject, setFilters } from "../projectSlice";
-import ImageUpload from "./ImageUpload";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { formatStatus } from "@/constants/constants";
 import { useDebounce } from "@/hooks/useDebounce";
+import ImageUpload from "@/components/core/ImageUpload";
 
 export function DataTable({
   columns,

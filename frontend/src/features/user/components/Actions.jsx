@@ -13,11 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import ImageUpload from "./ImageUpload";
 import { useDispatch } from "react-redux";
 import { axiosClient } from "@/axios";
 import { deleteUser as deleteUserAction, updateUser } from "../userSlice";
 import { toast } from "sonner";
+import ImageUpload from "@/components/core/ImageUpload";
 
 export default function Actions({ user }) {
   const dispatch = useDispatch();

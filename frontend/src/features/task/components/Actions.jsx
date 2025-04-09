@@ -23,7 +23,7 @@ import { axiosClient } from "@/axios";
 import { deleteTask as deleteTaskAction, updateTask } from "../taskSlice";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import ImageUpload from "./ImageUpload";
+import ImageUpload from "../../../components/core/ImageUpload";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,

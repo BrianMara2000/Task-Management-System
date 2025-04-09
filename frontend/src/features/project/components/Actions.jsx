@@ -29,7 +29,6 @@ import {
 } from "../projectSlice";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import ImageUpload from "./ImageUpload";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -54,6 +53,7 @@ import {
 import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import { Link } from "react-router-dom";
+import ImageUpload from "@/components/core/ImageUpload";
 
 export default function Actions({ project }) {
   const dispatch = useDispatch();

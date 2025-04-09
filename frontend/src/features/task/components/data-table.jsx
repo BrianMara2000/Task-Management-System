@@ -44,34 +44,17 @@ import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { axiosClient } from "@/axios";
 import { toast } from "sonner";
-import { PlusIcon, Calendar as CalendarIcon, FilterIcon } from "lucide-react";
+import { PlusIcon, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { addTask, setFilters } from "../taskSlice";
-import ImageUpload from "./ImageUpload";
+import ImageUpload from "../../../components/core/ImageUpload";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { getColorFromName } from "@/constants/constants";
 import { useDebounce } from "@/hooks/useDebounce";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  CircleAlertIcon,
-  CircleIcon,
-  TriangleAlert,
-  CircleCheck,
-  Clock,
-  Loader2,
-} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Filters } from "@/components/core/filter";
 
 export function DataTable({
   columns,
@@ -101,69 +84,6 @@ export function DataTable({
   });
   const [localSearch, setLocalSearch] = useState(filters.search || "");
   const debouncedSearch = useDebounce(localSearch, 500);
-
-  const taskFilters = {
-    Status: [
-      {
-        name: "Pending",
-        value: "pending",
-        icon: <Clock className="w-4 h-4 text-yellow-500" />,
-      },
-      {
-        name: "In_Progress",
-        value: "in_progress",
-        icon: <Loader2 className="w-4 h-4 text-blue-500" />,
-      },
-      {
-        name: "Completed",
-        value: "completed",
-        icon: <CircleCheck className="w-4 h-4 text-green-500" />,
-      },
-    ],
-
-    Assignee: users.map((user) => ({
-      name: user.name,
-      value: user.id,
-      icon: (
-        <>
-          <Avatar>
-            <AvatarImage
-              src={user.profile_image}
-              alt={user.name}
-              className="rounded-full w-full h-full object-cover"
-            />
-            <AvatarFallback
-              className={`w-full h-full flex items-center justify-center rounded-full ${getColorFromName(
-                user.name
-              )} text-white font-bold`}
-            >
-              {user.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-        </>
-      ),
-    })),
-
-    Priority: [
-      {
-        name: "Low",
-        value: "low",
-        icon: (
-          <CircleIcon fill="currentColor" className="w-3 h-3 text-green-500" />
-        ),
-      },
-      {
-        name: "Medium",
-        value: "medium",
-        icon: <CircleAlertIcon className="w-5 h-5 text-yellow-500" />,
-      },
-      {
-        name: "High",
-        value: "high",
-        icon: <TriangleAlert className="w-5 h-5 text-red-500" />,
-      },
-    ],
-  };
 
   const table = useReactTable({
     data,
@@ -296,33 +216,6 @@ export function DataTable({
               </SelectContent>
             </Select>
           </div>
-          {/* <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Filter by status</p>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => {
-                dispatch(
-                  setFilters({
-                    ...filters,
-                    status: value,
-                  })
-                );
-              }}
-            >
-              <SelectTrigger className="h-8 w-[100px]">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {["All", "pending", "in_progress", "completed"].map(
-                  (status) => (
-                    <SelectItem key={status} value={`${status}`}>
-                      {formatStatus(status)}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-          </div> */}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -332,38 +225,9 @@ export function DataTable({
             onChange={(e) => setLocalSearch(e.target.value)}
             className="h-8 w-[150px] lg:w-[250px] py-4"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="px-3 py-2 flex items-center gap-2 border-2 rounded-md font-poppins hover:bg-gray-200 font-semibold text-sm text-gray-700 transition duration-200 cursor-pointer">
-                <FilterIcon className="w-5 h-5" />
-                <span>Filter</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              {Object.entries(taskFilters).map(([category, filterOptions]) => (
-                <DropdownMenuSub key={category}>
-                  <DropdownMenuSubTrigger>{category}</DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    {filterOptions.map((filter) => (
-                      <DropdownMenuCheckboxItem
-                        key={filter.value}
-                        checked={filters[category.toLowerCase()]?.includes(
-                          filter.value
-                        )}
-                        onCheckedChange={() =>
-                          toggleFilter(category.toLowerCase(), filter.value)
-                        }
-                        className="flex items-center gap-2"
-                      >
-                        <span className="flex-shrink-0">{filter.icon}</span>
-                        <span>{filter.name}</span>
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          <Filters filters={filters} toggleFilter={toggleFilter} />
+
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2 px-3 py-2 text-white bg-purple-500 rounded-md hover:bg-purple-400 hover:text-white transition duration-200">
