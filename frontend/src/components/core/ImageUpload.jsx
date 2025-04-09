@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export default function ProfileImageUpload({ onUpload }) {
+export default function ImageUpload({ onUpload }) {
   const [preview, setPreview] = useState(null);
   const inputRef = useRef(null);
 
@@ -46,7 +46,7 @@ export default function ProfileImageUpload({ onUpload }) {
         <img
           src={preview}
           alt="Profile Preview"
-          className="w-32 h-32 object-cover rounded-full mx-auto"
+          className="w-40 h-32 object-cover rounded mx-auto"
         />
       ) : (
         <div className="text-center">
