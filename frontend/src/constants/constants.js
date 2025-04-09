@@ -1,3 +1,12 @@
+import {
+  CircleAlertIcon,
+  CircleIcon,
+  TriangleAlert,
+  CircleCheck,
+  Clock,
+  Loader2,
+} from "lucide-react";
+
 // src/constants/constants.js
 export const formatStatus = (status) => {
   const statuses = {
@@ -49,3 +58,54 @@ export const priorityColors = {
   Medium: "text-yellow-500",
   High: "text-red-500",
 };
+
+export const getTaskFilters = (users) => ({
+  Status: [
+    {
+      name: "Pending",
+      value: "pending",
+      icon: Clock,
+      className: "w-4 h-4 text-yellow-500",
+    },
+    {
+      name: "In Progress",
+      value: "in_progress",
+      icon: Loader2,
+      className: "w-4 h-4 text-blue-500",
+    },
+    {
+      name: "Completed",
+      value: "completed",
+      icon: CircleCheck,
+      className: "w-4 h-4 text-green-500",
+    },
+  ],
+
+  Assignee: users.map((user) => ({
+    name: user.name,
+    value: user.id,
+    icon: user.profile_image,
+  })),
+
+  Priority: [
+    {
+      name: "Low",
+      value: "low",
+      icon: CircleIcon,
+      fill: "currentColor",
+      className: "w-3 h-3 text-green-500",
+    },
+    {
+      name: "Medium",
+      value: "medium",
+      icon: CircleAlertIcon,
+      className: "w-5 h-5 text-yellow-500",
+    },
+    {
+      name: "High",
+      value: "high",
+      icon: TriangleAlert,
+      className: "w-5 h-5 text-red-500",
+    },
+  ],
+});
