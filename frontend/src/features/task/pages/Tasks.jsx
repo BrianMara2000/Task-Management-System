@@ -5,6 +5,8 @@ import { axiosClient } from "@/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setPagination, setTasks } from "@/features/task/taskSlice";
 import { setUsers } from "@/features/user/userSlice";
+import Board from "@/features/dnd/components/Board";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Tasks({ projectId }) {
   const dispatch = useDispatch();
@@ -68,20 +70,35 @@ export default function Tasks({ projectId }) {
   }, [fetchUsers]);
 
   return (
-    <div className="container mx-auto w-full py-10">
-      <DataTable
-        columns={columns}
-        filters={filters}
-        data={tasks}
-        pagination={pagination}
-        setPagination={(newPagination) =>
-          dispatch(setPagination(newPagination))
-        }
-        error={error}
-        loading={loading}
-        users={users}
-        projectId={projectId}
-      />
+    <div className="flex justify-center items-center mb-10">
+      <Tabs defaultValue="table" className="w-full flex justify-center">
+        <TabsList className="w-[50%] mx-auto">
+          <TabsTrigger value="table">Table</TabsTrigger>
+          <TabsTrigger value="board">Board</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+        </TabsList>
+        <TabsContent value="table">
+          <div className="container mx-auto w-full py-10">
+            <DataTable
+              columns={columns}
+              filters={filters}
+              data={tasks}
+              pagination={pagination}
+              setPagination={(newPagination) =>
+                dispatch(setPagination(newPagination))
+              }
+              error={error}
+              loading={loading}
+              users={users}
+              projectId={projectId}
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="board">
+          <Board projectId={projectId} />
+        </TabsContent>
+        <TabsContent value="calendar">Calendar</TabsContent>
+      </Tabs>
     </div>
   );
 }
