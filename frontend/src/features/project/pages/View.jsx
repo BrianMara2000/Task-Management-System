@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { axiosClient } from "@/axios";
@@ -73,22 +72,7 @@ const View = () => {
             <Pencil size={16} className="mr-2" /> Edit Project
           </Button>
         </div>
-
-        {/* View Mode Tabs */}
-        <div className="flex justify-center items-center mb-10">
-          <Tabs defaultValue="table" className="w-full flex justify-center">
-            <TabsList className="w-[50%] mx-auto">
-              <TabsTrigger value="table">Table</TabsTrigger>
-              <TabsTrigger value="board">Board</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            </TabsList>
-            <TabsContent value="table">
-              <Tasks projectId={projectId} />
-            </TabsContent>
-            <TabsContent value="board">Board</TabsContent>
-            <TabsContent value="calendar">Calendar</TabsContent>
-          </Tabs>
-        </div>
+        <Tasks projectId={projectId} />
       </div>
     </>
   );

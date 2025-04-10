@@ -37,6 +37,16 @@ class TaskController extends Controller
         return TaskResource::collection($tasks);
     }
 
+    public function getAllTasks(Request $request, Project $project)
+    {
+        $tasks = Task::query()->with(['project', 'user'])
+            ->where('project_id', $project->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return TaskResource::collection($tasks);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
