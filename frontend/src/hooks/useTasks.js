@@ -4,15 +4,9 @@ import { useState, useEffect } from "react";
 
 export function useTasks(projectId) {
   const [tasks, setTasks] = useState([]);
-  const [columns, setColumns] = useState([
-    { id: "pending", title: "Pending" },
-    { id: "in_progress", title: "In Progress" },
-    { id: "completed", title: "Completed" },
-  ]);
 
   useEffect(() => {
     const fetchTasks = async () => {
-      console.log(projectId);
       const response = await axiosClient.get(
         `/projects/${projectId}/tasks/board`
       );
@@ -47,5 +41,5 @@ export function useTasks(projectId) {
     await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
   };
 
-  return { tasks, columns, moveTask, updateStatus };
+  return { tasks, moveTask, updateStatus };
 }
