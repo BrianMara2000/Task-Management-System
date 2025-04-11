@@ -1,15 +1,37 @@
+import { formatPriority, getColorFromName } from "@/constants/constants";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import React from "react";
 
-export function TaskCard({ task, isDragging }) {
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Edit, Ellipsis } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useState } from "react";
+
+export function TaskCard({ task, isDragging, priority }) {
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task.id });
+    useSortable({ id: String(task.id) });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const matchedPriority = priority.find((item) => item.value === task.priority);
 
   return (
     <div
@@ -20,12 +42,72 @@ export function TaskCard({ task, isDragging }) {
       className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab 
                hover:shadow-md transition-shadow active:cursor-grabbing"
     >
-      <h4 className="font-medium line-clamp-2">{task.name}</h4>
-      {task.due_date && (
-        <div className="mt-2 text-xs text-gray-500">
-          Due: {new Date(task.dueDate).toLocaleDateString()}
+      <div className="flex items-center justify-between mb-2">
+        <div
+          className={`inline-flex items-center gap-2 mb-2 rounded-lg ${matchedPriority.color} px-2 py-1`}
+        >
+          {matchedPriority && (
+            <span
+              className={` flex font-bold items-center gap-2`}
+              fill={matchedPriority.fill}
+            >
+              {React.createElement(matchedPriority.icon, {
+                fill: matchedPriority.fill || "none",
+                className: matchedPriority.className,
+              })}
+            </span>
+          )}
+          <span className="text-xs font-bold ">
+            {formatPriority(task.priority)} Priority
+          </span>
         </div>
-      )}
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()} // ⬅️ This is critical!
+            className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-white transition duration-200 ease-in-out"
+          >
+            <Ellipsis className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
+          </PopoverTrigger>
+
+          <PopoverContent className="flex flex-col w-40 p-1 gap-2 bg-white shadow-lg rounded-md">
+            <Edit className="h-5 w-5" />
+            <span>View</span>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4>
+      <p className="text-gray-500 text-sm mb-4">{task.description}</p>
+
+      <div className="flex items-center justify-between">
+        <p className=" text-xs text-gray-500">Due: {task.due_date}</p>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Avatar className="rounded h-10 flex items-center">
+                <AvatarImage
+                  src={task.assigned_user.profile_image}
+                  alt={task.assigned_user.name}
+                  className="rounded-full w-8 h-8 object-cover"
+                />
+
+                <AvatarFallback
+                  className={`rounded-full w-8 h-8 ${getColorFromName(
+                    task.assigned_user.name
+                  )} text-white font-bold`}
+                >
+                  {task.assigned_user.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>{task.assigned_user.name}</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 }

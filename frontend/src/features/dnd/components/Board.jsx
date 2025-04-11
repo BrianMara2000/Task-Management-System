@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
+import { Column } from "./Column";
+import { useTasks } from "@/hooks/useTasks";
+import { getTaskFilters } from "@/constants/constants";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Column } from "./Column";
-import { useTasks } from "@/hooks/useTasks";
 
-const Board = ({ projectId }) => {
-  const { columns, tasks, moveTask, updateStatus } = useTasks(projectId);
+const Board = ({ projectId, users }) => {
+  const { tasks, moveTask, updateStatus } = useTasks(projectId);
   const [activeId, setActiveId] = useState("");
+  const columns = getTaskFilters(users);
+  const { Status, Priority } = columns;
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -23,30 +26,34 @@ const Board = ({ projectId }) => {
     else {
       await updateStatus(active.id.toString(), over.data.current?.columnId);
     }
+    console.log("Dropped", active.id, "over", over?.id);
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 p-4 overflow-x-auto">
+    <div className="flex h-screen bg-gray-50 p-4 overflow-x-auto select-none">
       <DndContext
         collisionDetection={closestCorners}
         onDragEnd={handleDragEnd}
-        onDragStart={({ active }) => setActiveId(active.id.toString())}
+        onDragStart={({ active }) => {
+          console.log("Dragging", active.id);
+          setActiveId(active.id.toString());
+        }}
       >
         <div className="flex gap-4">
           <SortableContext
-            items={columns}
+            items={Status}
             strategy={verticalListSortingStrategy}
           >
-            {columns.map((column) => (
+            {Status?.map((column) => (
               <Column
-                key={column.id}
+                key={column.value}
                 column={column}
-                tasks={tasks.filter((t) => t.status === column.id)}
+                priority={Priority}
+                tasks={tasks.filter((t) => t.status === column.value)}
                 activeId={activeId}
               />
             ))}
           </SortableContext>
-          {/* <AddColumnButton /> */}
         </div>
       </DndContext>
     </div>
