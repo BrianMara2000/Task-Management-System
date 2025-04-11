@@ -68,9 +68,12 @@ export const columns = [
     cell: (info) => {
       const status = formatStatus(info.getValue()) || "No Status";
       const statusClass = statusColors[status];
-
       return (
-        <span className={`px-3 py-2 rounded ${statusClass}`}>{status}</span>
+        <span
+          className={`px-3 py-2 rounded ${statusClass} bg-blue-500 text-white`}
+        >
+          {status}
+        </span>
       );
     },
   },
