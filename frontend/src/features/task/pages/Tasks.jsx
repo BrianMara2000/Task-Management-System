@@ -95,7 +95,9 @@ export default function Tasks({ projectId }) {
           </div>
         </TabsContent>
         <TabsContent value="board">
-          <Board projectId={projectId} />
+          <div className="container mx-auto w-full py-10">
+            <Board projectId={projectId} users={users} />
+          </div>
         </TabsContent>
         <TabsContent value="calendar">Calendar</TabsContent>
       </Tabs>
