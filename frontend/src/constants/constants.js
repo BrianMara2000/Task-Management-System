@@ -11,7 +11,7 @@ import {
 export const formatStatus = (status) => {
   const statuses = {
     pending: "Pending",
-    in_progress: "In_Progress",
+    in_progress: "In Progress",
     completed: "Completed",
   };
 
@@ -20,7 +20,7 @@ export const formatStatus = (status) => {
 
 export const statusColors = {
   Pending: "bg-yellow-500 text-white",
-  In_Progress: "bg-blue-500 text-white",
+  "In Progress": "bg-blue-500 text-white",
   Completed: "bg-green-500 text-white",
 };
 
@@ -77,11 +77,11 @@ export const getTaskFilters = (users) => ({
       name: "Completed",
       value: "completed",
       icon: CircleCheck,
-      className: "w-4 h-4 text-green-500",
+      className: "w-4 h-4 text-green-500 ",
     },
   ],
 
-  Assignee: users.map((user) => ({
+  Assignee: users?.map((user) => ({
     name: user.name,
     value: user.id,
     icon: user.profile_image,
@@ -94,18 +94,21 @@ export const getTaskFilters = (users) => ({
       icon: CircleIcon,
       fill: "currentColor",
       className: "w-3 h-3 text-green-500",
+      color: "text-green-500 bg-green-100",
     },
     {
       name: "Medium",
       value: "medium",
       icon: CircleAlertIcon,
       className: "w-5 h-5 text-yellow-500",
+      color: "text-yellow-500 bg-yellow-100",
     },
     {
       name: "High",
       value: "high",
       icon: TriangleAlert,
-      className: "w-5 h-5 text-red-500",
+      className: "w-4 h-4 text-red-500",
+      color: "text-red-500 bg-red-100",
     },
   ],
 });
