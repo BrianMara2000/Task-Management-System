@@ -19,14 +19,18 @@ const Board = ({ projectId, users }) => {
     if (!over || active.id === over.id) return;
 
     // Same column (reorder)
-    if (active.data.current?.columnId === over.data.current?.columnId) {
+    if (
+      active.data.current?.sortable.containerId ===
+      over.data.current?.sortable.containerId
+    ) {
       moveTask(active.id.toString(), over.id.toString());
     }
     // Different column (change status)
     else {
+      console.log("Dropped", active, "over", over);
       await updateStatus(active.id.toString(), over.data.current?.columnId);
     }
-    console.log("Dropped", active.id, "over", over?.id);
+    console.log("Dropped", active, "over", over);
   };
 
   return (
