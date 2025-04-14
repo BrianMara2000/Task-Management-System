@@ -1,44 +1,47 @@
 import { axiosClient } from "@/axios";
-import axios from "axios";
-import { useState, useEffect } from "react";
+import { setAllTasks } from "@/features/task/taskSlice";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 export function useTasks(projectId) {
-  const [tasks, setTasks] = useState([]);
+  const dispatch = useDispatch();
+  const tasks = useSelector((state) => state.task.allTasks);
 
   useEffect(() => {
     const fetchTasks = async () => {
       const response = await axiosClient.get(
         `/projects/${projectId}/tasks/board`
       );
-      setTasks(response.data.data);
+      dispatch(setAllTasks(response.data.data));
     };
     fetchTasks();
-  }, []);
+  }, [dispatch, projectId]);
 
   const moveTask = async (taskId, overId) => {
-    // Optimistic update
-    setTasks((prev) => {
-      const taskIndex = prev.findIndex((t) => t.id === taskId);
-      const overIndex = prev.findIndex((t) => t.id === overId);
-      const newTasks = [...prev];
-      newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
-      return newTasks;
-    });
+    const taskIndex = tasks.findIndex((t) => t.id === taskId);
+    const overIndex = tasks.findIndex((t) => t.id === overId);
+    const newTasks = [...tasks];
+    newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
+    dispatch(setAllTasks(newTasks));
 
-    // API call
     await axiosClient.patch(`/tasks/${taskId}/position`, { position: overId });
   };
 
   const updateStatus = async (taskId, newStatus) => {
-    // Optimistic update
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+    try {
+      const updatedTasks = tasks.map((task) =>
+        task.id.toString() === taskId.toString()
+          ? { ...task, status: newStatus }
+          : task
+      );
+      dispatch(setAllTasks(updatedTasks));
 
-    // API call
-    await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+      await axiosClient.patch(`/tasks/${taskId}`, { status: newStatus });
+    } catch (error) {
+      // Revert on error
+      dispatch(setAllTasks(tasks));
+      console.error("Status update failed:", error);
+    }
   };
 
   return { tasks, moveTask, updateStatus };

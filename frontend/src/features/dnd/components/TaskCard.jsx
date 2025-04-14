@@ -1,4 +1,9 @@
-import { formatPriority, getColorFromName } from "@/constants/constants";
+import {
+  formatPriority,
+  formatStatus,
+  getColorFromName,
+  statusBorderColors,
+} from "@/constants/constants";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import React from "react";
@@ -18,17 +23,25 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 
-export function TaskCard({ task, isDragging, priority }) {
+export function TaskCard({ task, isDragging, priority, columnId }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: String(task.id) });
+    useSortable({
+      id: task.id.toString(),
+      data: {
+        type: "task",
+        status: task.status,
+        columnId: columnId,
+        task: task, // use the prop you passed
+      },
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 0 : 1,
   };
 
   const matchedPriority = priority.find((item) => item.value === task.priority);
@@ -39,8 +52,12 @@ export function TaskCard({ task, isDragging, priority }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab 
-               hover:shadow-md transition-shadow active:cursor-grabbing"
+      className={`bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab 
+               hover:shadow-md transition-shadow active:cursor-grabbing  ${
+                 isDragging
+                   ? "border-gray-500"
+                   : statusBorderColors[formatStatus(columnId)]
+               } border-l-4 border-solid`}
     >
       <div className="flex items-center justify-between mb-2">
         <div

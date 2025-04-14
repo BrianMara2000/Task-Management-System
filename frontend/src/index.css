@@ -112,6 +112,14 @@ body {
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+[data-dndkit-droppable] {
+  transition: background-color 0.2s ease;
+}
+
+[data-dndkit-droppable][data-over] {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   task: {},
   tasks: [],
+  allTasks: [],
   filters: {
     search: "",
     status: [],
@@ -26,6 +27,9 @@ const taskSlice = createSlice({
     },
     setTasks: (state, action) => {
       state.tasks = action.payload;
+    },
+    setAllTasks: (state, action) => {
+      state.allTasks = action.payload;
     },
     setFilters: (state, action) => {
       // This will merge the new filters with existing ones
@@ -64,6 +68,7 @@ const taskSlice = createSlice({
 export const {
   setTask,
   setTasks,
+  setAllTasks,
   setFilters,
   setPagination,
   addTask,
