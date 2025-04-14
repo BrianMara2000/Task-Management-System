@@ -24,6 +24,12 @@ export const statusColors = {
   Completed: "bg-green-500 text-white",
 };
 
+export const statusBorderColors = {
+  Pending: "border-l-yellow-500 ",
+  "In Progress": "border-l-blue-500 ",
+  Completed: "border-l-green-500 ",
+};
+
 export const getColorFromName = (name) => {
   const colors = [
     "bg-red-500",
