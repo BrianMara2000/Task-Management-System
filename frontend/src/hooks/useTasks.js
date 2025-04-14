@@ -28,12 +28,20 @@ export function useTasks(projectId) {
   };
 
   const updateStatus = async (taskId, newStatus) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, status: newStatus } : task
-    );
-    dispatch(setAllTasks(updatedTasks));
+    try {
+      const updatedTasks = tasks.map((task) =>
+        task.id.toString() === taskId.toString()
+          ? { ...task, status: newStatus }
+          : task
+      );
+      dispatch(setAllTasks(updatedTasks));
 
-    await axiosClient.patch(`/tasks/${taskId}`, { status: newStatus });
+      await axiosClient.patch(`/tasks/${taskId}`, { status: newStatus });
+    } catch (error) {
+      // Revert on error
+      dispatch(setAllTasks(tasks));
+      console.error("Status update failed:", error);
+    }
   };
 
   return { tasks, moveTask, updateStatus };
