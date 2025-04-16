@@ -3,8 +3,6 @@ import { DndContext, closestCorners } from "@dnd-kit/core";
 import { Column } from "./Column";
 import { useTasks } from "@/hooks/useTasks";
 import { getTaskFilters } from "@/constants/constants";
-import { useDispatch } from "react-redux";
-import { setAllTasks } from "@/features/task/taskSlice";
 import { DragOverlay } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { TaskCard } from "./TaskCard";
@@ -14,7 +12,6 @@ const Board = ({ projectId, users }) => {
   const [activeId, setActiveId] = useState("");
   const columns = getTaskFilters(users);
   const { Status, Priority } = columns;
-  const dispatch = useDispatch();
   const [activeTask, setActiveTask] = useState(null);
 
   const handleDragEnd = async (event) => {
@@ -23,24 +20,12 @@ const Board = ({ projectId, users }) => {
 
     const overColumnId = over.data.current?.columnId;
 
-    // Same column (reorder)
     if (active.data.current?.columnId === overColumnId) {
       moveTask(active.id.toString(), over.id.toString());
+    } else if (overColumnId) {
+      updateStatus(active.id.toString(), overColumnId);
     }
-    // Different column (change status)
-    else if (overColumnId) {
-      // Optimistic update first
-      const updatedTasks = tasks.map((task) =>
-        task.id.toString() === active.id
-          ? { ...task, status: overColumnId }
-          : task
-      );
-      dispatch(setAllTasks(updatedTasks));
-
-      // Then API call
-      await updateStatus(active.id.toString(), overColumnId);
-    }
-    console.log("Dropped", active, "over", over);
+    // console.log("Dropped", active, "over", over);
   };
 
   return (
@@ -50,6 +35,7 @@ const Board = ({ projectId, users }) => {
         collisionDetection={closestCorners}
         onDragEnd={handleDragEnd}
         onDragStart={({ active }) => {
+          console.log(active.id);
           setActiveId(active.id.toString());
           setActiveTask(tasks.find((t) => t.id.toString() === active.id)); // Optimize this later to avoid delay
         }}
