@@ -33,7 +33,7 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
         type: "task",
         status: task.status,
         columnId: columnId,
-        task: task, // use the prop you passed
+        task: task,
       },
     });
 
