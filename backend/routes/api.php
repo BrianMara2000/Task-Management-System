@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::put('/tasks/{task}', [TaskController::class, 'update']);
   Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
   Route::patch('/tasks/{task}', [TaskController::class, 'statusUpdate']);
+  Route::patch('/tasks/{task}/position', [TaskController::class, 'positionUpdate']);
 
 
   Route::post('users/invite-user', [InviteUserController::class, 'inviteUser']);

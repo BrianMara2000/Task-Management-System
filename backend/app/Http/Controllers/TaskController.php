@@ -41,7 +41,7 @@ class TaskController extends Controller
     {
         $tasks = Task::query()->with(['project', 'user'])
             ->where('project_id', $project->id)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('position', 'desc')
             ->get();
 
         return TaskResource::collection($tasks);
@@ -198,6 +198,48 @@ class TaskController extends Controller
         return response()->json([
             'message' => 'Task status updated successfully.',
             'task' => new TaskResource($task),
+        ]);
+    }
+    public function positionUpdate(Task $task, Request $request)
+    {
+        $data = $request->validate([
+            'targetId' => 'required|exists:tasks,id',
+        ]);
+
+        $targetTask = Task::findOrFail($data['targetId']);
+
+        if ($task->project_id !== $targetTask->project_id) {
+            return response()->json(['error' => 'Tasks must belong to the same project.'], 422);
+        }
+
+        $status = $targetTask->status;
+        $projectId = $targetTask->project_id;
+
+        $targetPosition = (float) $targetTask->position;
+
+        $previousTask = Task::query()
+            ->select('position')
+            ->where('project_id', $projectId)
+            ->where('status', $status)
+            ->where('position', '<', $targetPosition)
+            ->orderByDesc('position')
+            ->first();
+
+        $previousPosition = $previousTask?->position ?? 0;
+        $targetPosition = $targetTask->position;
+
+        $newPosition = $previousTask
+            ? ($previousPosition + $targetPosition) / 2
+            : $targetPosition - 1000;
+
+        $task->update(['position' => $newPosition]);
+
+        return response()->json([
+            'message' => 'Task moved successfully.',
+            'new_position' => $newPosition,
+            'previous_task' => $previousTask,
+            'previous_task_position' => $previousPosition,
+            'task' => $task,
         ]);
     }
 }

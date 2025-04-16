@@ -17,14 +17,19 @@ export function useTasks(projectId) {
     fetchTasks();
   }, [dispatch, projectId]);
 
-  const moveTask = async (taskId, overId) => {
-    const taskIndex = tasks.findIndex((t) => t.id === taskId);
-    const overIndex = tasks.findIndex((t) => t.id === overId);
-    const newTasks = [...tasks];
-    newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
-    dispatch(setAllTasks(newTasks));
-
-    await axiosClient.patch(`/tasks/${taskId}/position`, { position: overId });
+  const moveTask = async (taskId, targetId) => {
+    try {
+      const taskIndex = tasks.findIndex((t) => t.id == taskId);
+      const overIndex = tasks.findIndex((t) => t.id == targetId);
+      const newTasks = tasks.map((task) => ({ ...task }));
+      newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
+      dispatch(setAllTasks(newTasks));
+      await axiosClient.patch(`/tasks/${taskId}/position`, {
+        targetId,
+      });
+    } catch (error) {
+      console.error("Failed to move task:", error);
+    }
   };
 
   const updateStatus = async (taskId, newStatus) => {
