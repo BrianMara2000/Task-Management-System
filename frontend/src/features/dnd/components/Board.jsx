@@ -25,7 +25,6 @@ const Board = ({ projectId, users }) => {
     } else if (overColumnId) {
       updateStatus(active.id.toString(), overColumnId);
     }
-    // console.log("Dropped", active, "over", over);
   };
 
   return (

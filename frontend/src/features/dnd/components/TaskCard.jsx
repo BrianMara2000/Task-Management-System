@@ -96,7 +96,13 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
 
       <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4>
       <p className="text-gray-500 text-sm mb-4">{task.description}</p>
-
+      <p>Debugging purposes</p>
+      <div className="flex items-center justify-between border-2">
+        <p className=" text-xs text-gray-500 font-bold">Task Id: {task.id}</p>
+        <p className=" text-xs  font-bold text-red-500">
+          Task Postion: {task.position}
+        </p>
+      </div>
       <div className="flex items-center justify-between">
         <p className=" text-xs text-gray-500">Due: {task.due_date}</p>
 
