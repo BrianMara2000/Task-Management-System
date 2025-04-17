@@ -202,44 +202,77 @@ class TaskController extends Controller
     }
     public function positionUpdate(Task $task, Request $request)
     {
-        $data = $request->validate([
-            'targetId' => 'required|exists:tasks,id',
-        ]);
-
+        $data = $request->validate(['targetId' => 'required|exists:tasks,id']);
         $targetTask = Task::findOrFail($data['targetId']);
 
-        if ($task->project_id !== $targetTask->project_id) {
-            return response()->json(['error' => 'Tasks must belong to the same project.'], 422);
+        $project = Project::findOrFail($task->project_id);
+        $project->reorder_count += 1;
+
+        if ($project->reorder_count >= 20) {
+            $this->normalizeTaskPositions($project->id, $targetTask->status);
+            $project->reorder_count = 0;
         }
 
-        $status = $targetTask->status;
-        $projectId = $targetTask->project_id;
+        $project->save();
+
+        if ($task->project_id !== $targetTask->project_id) {
+            return response()->json(['error' => 'Tasks must be in same project'], 422);
+        }
 
         $targetPosition = (float) $targetTask->position;
 
         $previousTask = Task::query()
-            ->select('position')
-            ->where('project_id', $projectId)
-            ->where('status', $status)
+            ->where('project_id', $targetTask->project_id)
+            ->where('status', $targetTask->status)
             ->where('position', '<', $targetPosition)
+            ->where('id', '!=', $targetTask->id)
             ->orderByDesc('position')
             ->first();
 
-        $previousPosition = $previousTask?->position ?? 0;
-        $targetPosition = $targetTask->position;
+        $nextTask = Task::query()
+            ->where('project_id', $targetTask->project_id)
+            ->where('status', $targetTask->status)
+            ->where('position', '>', $targetPosition)
+            ->where('id', '!=', $targetTask->id)
+            ->orderBy('position')
+            ->first();
 
-        $newPosition = $previousTask
-            ? ($previousPosition + $targetPosition) / 2
-            : $targetPosition - 1000;
+        if (!$previousTask && !$nextTask) {
+            $newPosition = 1000;
+        } elseif (!$previousTask) {
+            $newPosition = $targetPosition - 1000;
+        } elseif (!$nextTask) {
+            $newPosition = $targetPosition + 1000;
+        } else {
+            if ($previousTask->id === $task->id) {
+                $newPosition = ($nextTask->position + $targetPosition) / 2;
+            } else {
+                $newPosition = ($previousTask->position + $targetPosition) / 2;
+            }
+        }
 
-        $task->update(['position' => $newPosition]);
+        $task->position = $newPosition;
+        $task->update();
 
         return response()->json([
-            'message' => 'Task moved successfully.',
-            'new_position' => $newPosition,
-            'previous_task' => $previousTask,
-            'previous_task_position' => $previousPosition,
-            'task' => $task,
+            'success' => true,
+            'prev_task' => $previousTask,
+            'new_position' => $newPosition
         ]);
+    }
+
+    private function normalizeTaskPositions($projectId, $status)
+    {
+        $tasks = Task::where('project_id', $projectId)
+            ->where('status', $status)
+            ->orderBy('position')
+            ->get();
+
+        $position = 1000;
+        foreach ($tasks as $task) {
+            $task->position = $position;
+            $task->save();
+            $position += 1000;
+        }
     }
 }
