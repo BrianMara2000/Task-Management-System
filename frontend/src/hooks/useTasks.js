@@ -21,9 +21,10 @@ export function useTasks(projectId) {
     try {
       const taskIndex = tasks.findIndex((t) => t.id == taskId);
       const overIndex = tasks.findIndex((t) => t.id == targetId);
-      const newTasks = tasks.map((task) => ({ ...task }));
+      const newTasks = [...tasks].map((task) => ({ ...task }));
       newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
-      dispatch(setAllTasks(newTasks));
+
+      // dispatch(setAllTasks(newTasks));
       await axiosClient.patch(`/tasks/${taskId}/position`, {
         targetId,
       });
@@ -32,19 +33,29 @@ export function useTasks(projectId) {
     }
   };
 
-  const updateStatus = async (taskId, newStatus) => {
-    try {
-      const updatedTasks = tasks.map((task) =>
-        task.id.toString() === taskId.toString()
-          ? { ...task, status: newStatus }
-          : task
-      );
-      dispatch(setAllTasks(updatedTasks));
+  const updateStatus = async (taskId, newStatus, targetId) => {
+    const previousTasks = [...tasks];
 
-      await axiosClient.patch(`/tasks/${taskId}`, { status: newStatus });
+    try {
+      const taskIndex = tasks.findIndex((t) => t.id == taskId);
+      const overIndex = tasks.findIndex((t) => t.id == targetId);
+      const newTasks = [...tasks].map((task) => ({ ...task }));
+
+      newTasks[taskIndex].status = newStatus;
+
+      const [movedTask] = newTasks.splice(taskIndex, 1);
+      newTasks.splice(overIndex, 0, movedTask);
+      newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
+
+      dispatch(setAllTasks(newTasks));
+
+      await axiosClient.patch(`/tasks/${taskId}`, {
+        status: newStatus,
+        targetId,
+      });
     } catch (error) {
       // Revert on error
-      dispatch(setAllTasks(tasks));
+      dispatch(setAllTasks(previousTasks));
       console.error("Status update failed:", error);
     }
   };
