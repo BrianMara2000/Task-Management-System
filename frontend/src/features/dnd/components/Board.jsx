@@ -23,7 +23,7 @@ const Board = ({ projectId, users }) => {
     if (active.data.current?.columnId === overColumnId) {
       moveTask(active.id.toString(), over.id.toString());
     } else if (overColumnId) {
-      updateStatus(active.id.toString(), overColumnId);
+      updateStatus(active.id.toString(), overColumnId, over.id.toString());
     }
   };
 
