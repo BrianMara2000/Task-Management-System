@@ -187,7 +187,7 @@ class TaskController extends Controller
         return response()->json(['message' => 'Task deleted successfully']);
     }
 
-    public function statusUpdate(Task $task)
+    public function statusUpdate(Task $task, Request $request)
     {
         request()->validate([
             'status' => 'required|string|in:pending,in_progress,completed',
@@ -195,8 +195,13 @@ class TaskController extends Controller
 
         $task->update(['status' => request('status')]);
 
+        if ($request->has('targetId')) {
+            $targetTask = Task::findOrFail($request->targetId);
+            $this->reorderTask($task, $targetTask);
+        }
+
         return response()->json([
-            'message' => 'Task status updated successfully.',
+            'message' => 'Task status updated and reordered.',
             'task' => new TaskResource($task),
         ]);
     }
@@ -205,6 +210,18 @@ class TaskController extends Controller
         $data = $request->validate(['targetId' => 'required|exists:tasks,id']);
         $targetTask = Task::findOrFail($data['targetId']);
 
+        $this->reorderTask($task, $targetTask);
+
+
+
+        return response()->json([
+            'message' => 'Task position updated.',
+            'task' => new TaskResource($task),
+        ]);
+    }
+
+    private function reorderTask(Task $task, Task $targetTask)
+    {
         $project = Project::findOrFail($task->project_id);
         $project->reorder_count += 1;
 
@@ -237,28 +254,21 @@ class TaskController extends Controller
             ->orderBy('position')
             ->first();
 
+
         if (!$previousTask && !$nextTask) {
-            $newPosition = 1000;
-        } elseif (!$previousTask) {
-            $newPosition = $targetPosition - 1000;
-        } elseif (!$nextTask) {
-            $newPosition = $targetPosition + 1000;
-        } else {
-            if ($previousTask->id === $task->id) {
-                $newPosition = ($nextTask->position + $targetPosition) / 2;
-            } else {
-                $newPosition = ($previousTask->position + $targetPosition) / 2;
-            }
+            $newPosition = 100;
+        } elseif (!$previousTask && $nextTask) {
+            $newPosition = $targetPosition - 100;
+        } elseif (!$nextTask && $previousTask) {
+            $newPosition = $targetPosition + 100;
+        } elseif ($previousTask->id === $task->id) {
+            $newPosition = ($nextTask->position + $targetPosition) / 2;
+        } elseif ($previousTask && $nextTask) {
+            $newPosition = ($previousTask->position + $targetPosition) / 2;
         }
 
         $task->position = $newPosition;
         $task->update();
-
-        return response()->json([
-            'success' => true,
-            'prev_task' => $previousTask,
-            'new_position' => $newPosition
-        ]);
     }
 
     private function normalizeTaskPositions($projectId, $status)
@@ -268,11 +278,11 @@ class TaskController extends Controller
             ->orderBy('position')
             ->get();
 
-        $position = 1000;
+        $position = 100;
         foreach ($tasks as $task) {
             $task->position = $position;
             $task->save();
-            $position += 1000;
+            $position += 100;
         }
     }
 }
