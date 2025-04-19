@@ -24,7 +24,7 @@ export function useTasks(projectId) {
       const newTasks = [...tasks].map((task) => ({ ...task }));
       newTasks.splice(overIndex, 0, newTasks.splice(taskIndex, 1)[0]);
 
-      // dispatch(setAllTasks(newTasks));
+      dispatch(setAllTasks(newTasks));
       await axiosClient.patch(`/tasks/${taskId}/position`, {
         targetId,
       });

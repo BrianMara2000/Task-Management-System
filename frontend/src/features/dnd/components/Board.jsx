@@ -18,12 +18,13 @@ const Board = ({ projectId, users }) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const overColumnId = over.data.current?.columnId;
+    const overColumnId = over.data.current.columnId ?? over.id;
+    const targetId = over.data.current?.accepts ? null : over.id;
 
     if (active.data.current?.columnId === overColumnId) {
       moveTask(active.id.toString(), over.id.toString());
     } else if (overColumnId) {
-      updateStatus(active.id.toString(), overColumnId, over.id.toString());
+      updateStatus(active.id.toString(), overColumnId, targetId?.toString());
     }
   };
 
@@ -34,7 +35,6 @@ const Board = ({ projectId, users }) => {
         collisionDetection={closestCorners}
         onDragEnd={handleDragEnd}
         onDragStart={({ active }) => {
-          console.log(active.id);
           setActiveId(active.id.toString());
           setActiveTask(tasks.find((t) => t.id.toString() === active.id)); // Optimize this later to avoid delay
         }}
