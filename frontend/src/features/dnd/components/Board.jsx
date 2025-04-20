@@ -18,13 +18,21 @@ const Board = ({ projectId, users }) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const overColumnId = over.data.current.columnId ?? over.id;
-    const targetId = over.data.current?.accepts ? null : over.id;
+    const activeTask = tasks.find(
+      (t) => t.id.toString() === active.id.toString()
+    );
+    const overColumnId =
+      over.data.current?.columnId ||
+      (over.data.current?.accepts ? over.id : activeTask.status);
 
-    if (active.data.current?.columnId === overColumnId) {
+    if (activeTask.status === overColumnId) {
       moveTask(active.id.toString(), over.id.toString());
-    } else if (overColumnId) {
-      updateStatus(active.id.toString(), overColumnId, targetId?.toString());
+    } else {
+      updateStatus(
+        active.id.toString(),
+        overColumnId,
+        over.data.current?.accepts ? null : over.id.toString()
+      );
     }
   };
 
