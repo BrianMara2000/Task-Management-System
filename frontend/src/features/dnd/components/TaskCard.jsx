@@ -22,9 +22,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useState } from "react";
+import { useEffect } from "react";
 
 export function TaskCard({ task, isDragging, priority, columnId }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -45,6 +47,14 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
   };
 
   const matchedPriority = priority.find((item) => item.value === task.priority);
+
+  useEffect(() => {
+    let timer;
+    if (isSyncing) {
+      timer = setTimeout(() => setIsSyncing(false), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [isSyncing]);
 
   return (
     <div
