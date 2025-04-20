@@ -11,6 +11,7 @@ use App\Http\Resources\TaskResource;
 use App\Http\Requests\StoreTaskRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateTaskRequest;
+use Illuminate\Support\Facades\DB;
 
 class TaskController extends Controller
 {
@@ -205,18 +206,53 @@ class TaskController extends Controller
             'task' => new TaskResource($task),
         ]);
     }
+
+    // public function positionUpdate(Task $task, Request $request)
+    // {
+    //     $data = $request->validate(['targetId' => 'required|exists:tasks,id']);
+    //     $targetTask = Task::findOrFail($data['targetId']);
+
+    //     $this->reorderTask($task, $targetTask);
+
+
+
+    //     return response()->json([
+    //         'message' => 'Task position updated.',
+    //         'task' => new TaskResource($task),
+    //     ]);
+    // }
+
     public function positionUpdate(Task $task, Request $request)
     {
-        $data = $request->validate(['targetId' => 'required|exists:tasks,id']);
-        $targetTask = Task::findOrFail($data['targetId']);
+        $validated = $request->validate([
+            'targetId' => 'required|exists:tasks,id',
+            'status' => 'sometimes|required',
+            'checksum' => 'sometimes|string',
+            'clientPosition' => 'sometimes|numeric'
+        ]);
 
-        $this->reorderTask($task, $targetTask);
+        DB::transaction(function () use ($task, $validated) {
+            // Verify sync state
+            if ($request->has('checksum')) {
+                $currentTasks = Task::where('project_id', $task->project_id)
+                    ->orderBy('position')
+                    ->get();
 
+                $serverChecksum = $currentTasks->map(fn($t) => "{$t->id}:{$t->position}")->join('|');
 
+                if ($serverChecksum !== $request->checksum) {
+                    abort(409, 'Position conflict detected');
+                }
+            }
+
+            // Proceed with normal reorder logic
+            $targetTask = Task::findOrFail($validated['targetId']);
+            $this->reorderTask($task, $targetTask);
+        });
 
         return response()->json([
-            'message' => 'Task position updated.',
-            'task' => new TaskResource($task),
+            'message' => 'Task position updated',
+            'task' => new TaskResource($task->fresh())
         ]);
     }
 
