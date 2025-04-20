@@ -231,24 +231,22 @@ class TaskController extends Controller
             'clientPosition' => 'sometimes|numeric'
         ]);
 
-        DB::transaction(function () use ($task, $validated) {
-            // Verify sync state
-            if ($request->has('checksum')) {
-                $currentTasks = Task::where('project_id', $task->project_id)
-                    ->orderBy('position')
-                    ->get();
 
-                $serverChecksum = $currentTasks->map(fn($t) => "{$t->id}:{$t->position}")->join('|');
+        if ($request->has('checksum')) {
+            $currentTasks = Task::where('project_id', $task->project_id)
+                ->orderBy('position')
+                ->get();
 
-                if ($serverChecksum !== $request->checksum) {
-                    abort(409, 'Position conflict detected');
-                }
+            $serverChecksum = $currentTasks->map(fn($t) => "{$t->id}:{$t->position}")->join('|');
+
+            if ($serverChecksum !== $request->checksum) {
+                abort(409, 'Position conflict detected');
             }
+        }
 
-            // Proceed with normal reorder logic
-            $targetTask = Task::findOrFail($validated['targetId']);
-            $this->reorderTask($task, $targetTask);
-        });
+        // Proceed with normal reorder logic
+        $targetTask = Task::findOrFail($validated['targetId']);
+        $this->reorderTask($task, $targetTask);
 
         return response()->json([
             'message' => 'Task position updated',
