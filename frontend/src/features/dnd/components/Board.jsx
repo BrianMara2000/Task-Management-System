@@ -26,7 +26,7 @@ const Board = ({ projectId, users }) => {
       (over.data.current?.accepts ? over.id : activeTask.status);
 
     if (activeTask.status === overColumnId) {
-      moveTask(active.id.toString(), over.id.toString());
+      moveTask(active.id.toString(), over.id.toString(), overColumnId);
     } else {
       updateStatus(
         active.id.toString(),
