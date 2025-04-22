@@ -17,27 +17,28 @@ export function useTasks(projectId) {
     fetchTasks();
   }, [dispatch, projectId]);
 
-  // In your useTasks hook
   const moveTask = async (taskId, targetId, status) => {
-    const previousTasks = [...tasks]; // Store for rollback
+    const previousTasks = [...tasks];
 
     try {
-      // 1. Optimistic update
-      const newTasks = calculateNewOrder(tasks, taskId, targetId);
+      const checksum = generateChecksum(tasks, status);
+
+      const newTasks = calculateNewOrder(tasks, taskId, targetId, status);
       dispatch(setAllTasks(newTasks));
 
-      // 2. Send checksum for validation
-      const checksum = generateChecksum(newTasks);
       await axiosClient.patch(`/tasks/${taskId}/position`, {
         targetId,
         status,
         checksum,
         clientPosition: newTasks.find((t) => t.id == taskId).position,
       });
+
+      // console.log(response.data.updatedTasks);
+
+      // dispatch(setAllTasks(response.data.updatedTasks));
     } catch (error) {
-      // 3. Reconcile on error
       if (error.response?.status === 409) {
-        // await recoverFromError();
+        await recoverFromError();
         console.error("Checksum mismatch, recovering...");
       } else {
         dispatch(setAllTasks(previousTasks));
@@ -45,42 +46,43 @@ export function useTasks(projectId) {
     }
   };
 
-  // Generate a simple checksum
-  const generateChecksum = (tasks) => {
-    return tasks.map((t) => `${t.id}:${t.position}`).join("|");
+  const generateChecksum = (tasks, status) => {
+    return tasks
+      .filter((t) => t.status === status)
+      .sort((a, b) => a.position - b.position)
+      .map((t) => `${t.id}:${t.position}`)
+      .join("|");
   };
 
-  // Calculate positions client-side
-  const calculateNewOrder = (tasks, taskId, targetId) => {
-    const taskIndex = tasks.findIndex((t) => t.id == taskId);
-    const overIndex = tasks.findIndex((t) => t.id == targetId);
+  const calculateNewOrder = (tasks, taskId, targetId, status) => {
+    const columnTasks = tasks.filter((t) => t.status === status);
+    const taskIndex = columnTasks.findIndex((t) => t.id == taskId);
+    const overIndex = columnTasks.findIndex((t) => t.id == targetId);
+
+    const fromIndex = tasks.indexOf(columnTasks[taskIndex]);
+    let toIndex = tasks.indexOf(columnTasks[overIndex]);
+
+    if (fromIndex < toIndex) toIndex--;
+
     const newTasks = [...tasks];
-    const [movedTask] = newTasks.splice(taskIndex, 1);
-    newTasks.splice(overIndex, 0, movedTask);
+    const [movedTask] = newTasks.splice(fromIndex, 1);
+    newTasks.splice(toIndex, 0, movedTask);
+
+    return newTasks;
   };
 
-  // const moveTask = async (taskId, targetId) => {
-  //   try {
-  //     const taskIndex = tasks.findIndex((t) => t.id == taskId);
-  //     const overIndex = tasks.findIndex((t) => t.id == targetId);
-  //     const newTasks = [...tasks];
-  //     const [movedTask] = newTasks.splice(taskIndex, 1);
-  //     newTasks.splice(overIndex, 0, movedTask);
-
-  //     dispatch(setAllTasks(newTasks));
-  //     await axiosClient.patch(`/tasks/${taskId}/position`, {
-  //       targetId,
-  //     });
-  //   } catch (error) {
-  //     console.error("Failed to move task:", error);
-  //   }
-  // };
+  const recoverFromError = async () => {
+    const response = await axiosClient.get(
+      `/projects/${projectId}/tasks/board`
+    );
+    dispatch(setAllTasks(response.data.data));
+  };
 
   const updateStatus = async (taskId, newStatus, targetId) => {
     const previousTasks = [...tasks];
 
     try {
-      const statusTask = tasks.find((t) => t.status === newStatus);
+      const statusTask = tasks.filter((t) => t.status === newStatus);
 
       const newTasks = tasks.map((task) =>
         task.id == taskId ? { ...task, status: newStatus } : task
