@@ -47,15 +47,6 @@ class TaskController extends Controller
 
         return TaskResource::collection($tasks);
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -78,22 +69,6 @@ class TaskController extends Controller
         $task = Task::create($taskData);
 
         return response()->json(['task' => new TaskResource($task), 'message' => 'task created successfully']);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Task $task)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Task $task)
-    {
-        //
     }
 
     /**
@@ -207,20 +182,6 @@ class TaskController extends Controller
         ]);
     }
 
-    // public function positionUpdate(Task $task, Request $request)
-    // {
-    //     $data = $request->validate(['targetId' => 'required|exists:tasks,id']);
-    //     $targetTask = Task::findOrFail($data['targetId']);
-
-    //     $this->reorderTask($task, $targetTask);
-
-
-
-    //     return response()->json([
-    //         'message' => 'Task position updated.',
-    //         'task' => new TaskResource($task),
-    //     ]);
-    // }
 
     public function positionUpdate(Task $task, Request $request)
     {
@@ -231,26 +192,36 @@ class TaskController extends Controller
             'clientPosition' => 'sometimes|numeric'
         ]);
 
+        $serverTasks = Task::where('project_id', $task->project_id)->where('status', $validated['status'])
+            ->orderBy('position')
+            ->get();
+
+        $serverChecksum = $serverTasks->map(fn($t) => "{$t->id}:{$t->position}")
+            ->join('|');
 
         if ($request->has('checksum')) {
-            $currentTasks = Task::where('project_id', $task->project_id)
-                ->orderBy('position')
-                ->get();
-
-            $serverChecksum = $currentTasks->map(fn($t) => "{$t->id}:{$t->position}")->join('|');
-
             if ($serverChecksum !== $request->checksum) {
-                abort(409, 'Position conflict detected');
+                return response()->json([
+                    'message' => 'Position conflict detected',
+                    'serverState' => $serverTasks->map(fn($t) => ['id' => $t->id, 'position' => $t->position])
+                ], 409);
             }
         }
 
-        // Proceed with normal reorder logic
         $targetTask = Task::findOrFail($validated['targetId']);
         $this->reorderTask($task, $targetTask);
 
+        $updatedTasks = Task::where('project_id', $task->project_id)
+            ->orderByDesc('position')
+            ->get();
+
         return response()->json([
             'message' => 'Task position updated',
+            'updatedTasks' => TaskResource::collection($updatedTasks),
+            'serverChecksum' => $serverChecksum,
+            'clientChecksum' => $request->checksum,
             'task' => new TaskResource($task->fresh())
+
         ]);
     }
 
@@ -258,6 +229,9 @@ class TaskController extends Controller
     {
         $project = Project::findOrFail($task->project_id);
         $project->reorder_count += 1;
+
+        $task = Task::lockForUpdate()->find($task->id);
+        $targetTask = Task::lockForUpdate()->find($targetTask->id);
 
         if ($project->reorder_count >= 20) {
             $this->normalizeTaskPositions($project->id, $targetTask->status);
@@ -297,8 +271,12 @@ class TaskController extends Controller
             $newPosition = $targetPosition + 100;
         } elseif ($previousTask->id === $task->id) {
             $newPosition = ($nextTask->position + $targetPosition) / 2;
+        } elseif ($nextTask && $nextTask->id === $task->id) {
+            $newPosition = ($previousTask->position + $targetPosition) / 2;
         } elseif ($previousTask && $nextTask) {
             $newPosition = ($previousTask->position + $targetPosition) / 2;
+        } else {
+            $newPosition = $targetPosition + 100;
         }
 
         $task->position = $newPosition;
