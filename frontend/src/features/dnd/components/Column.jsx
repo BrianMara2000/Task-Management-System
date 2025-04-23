@@ -1,8 +1,4 @@
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import {
   Tooltip,
   TooltipContent,
@@ -20,7 +16,7 @@ export function Column({ column, tasks, activeId, priority }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: String(column.value), data: { columnId: column.value } });
   const { setNodeRef: setDroppableRef } = useDroppable({
-    id: column.value,
+    id: `column-${column.value}`,
     data: { accepts: ["pending", "in_progress", "completed"] },
   });
   const style = {
@@ -29,11 +25,7 @@ export function Column({ column, tasks, activeId, priority }) {
   };
 
   return (
-    <div
-      ref={setDroppableRef}
-      style={style}
-      className="flex flex-col w-full rounded-lg p-3"
-    >
+    <div style={style} className="flex flex-col w-full rounded-lg p-3">
       <div
         ref={setNodeRef}
         style={style}
@@ -66,22 +58,20 @@ export function Column({ column, tasks, activeId, priority }) {
         </div>
       </div>
 
-      <SortableContext
-        items={tasks.map((t) => t.id.toString())}
-        strategy={verticalListSortingStrategy}
+      <div
+        ref={setDroppableRef}
+        className="flex flex-col gap-3 overflow-y-auto flex-grow"
       >
-        <div className="flex flex-col gap-3 overflow-y-auto flex-grow">
-          {tasks.map((task) => (
-            <TaskCard
-              priority={priority}
-              columnId={column.value}
-              key={task.id}
-              task={task}
-              isDragging={activeId === task.id.toString()}
-            />
-          ))}
-        </div>
-      </SortableContext>
+        {tasks.map((task) => (
+          <TaskCard
+            priority={priority}
+            columnId={column.value}
+            key={task.id}
+            task={task}
+            isDragging={activeId === task.id.toString()}
+          />
+        ))}
+      </div>
     </div>
   );
 }
