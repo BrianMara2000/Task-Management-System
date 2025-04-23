@@ -42,7 +42,7 @@ class TaskController extends Controller
     {
         $tasks = Task::query()->with(['project', 'user'])
             ->where('project_id', $project->id)
-            ->orderBy('position', 'desc')
+            ->orderBy('position')
             ->get();
 
         return TaskResource::collection($tasks);
