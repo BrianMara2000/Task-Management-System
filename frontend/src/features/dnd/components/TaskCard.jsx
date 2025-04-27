@@ -22,11 +22,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useState } from "react";
-import { useEffect } from "react";
 
 export function TaskCard({ task, isDragging, priority, columnId }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -47,14 +45,6 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
   };
 
   const matchedPriority = priority.find((item) => item.value === task.priority);
-
-  useEffect(() => {
-    let timer;
-    if (isSyncing) {
-      timer = setTimeout(() => setIsSyncing(false), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [isSyncing]);
 
   return (
     <div
@@ -88,6 +78,7 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
             {formatPriority(task.priority)} Priority
           </span>
         </div>
+
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger
             onClick={(e) => e.stopPropagation()}
@@ -105,7 +96,7 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
       </div>
 
       <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4>
-      <p className="text-gray-500 text-sm mb-4">{task.description}</p>
+      {/* <p className="text-gray-500 text-sm mb-4">{task.description}</p> */}
       <p>Debugging purposes</p>
       <div className="flex items-center justify-between border-2">
         <p className=" text-xs text-gray-500 font-bold">Task Id: {task.id}</p>

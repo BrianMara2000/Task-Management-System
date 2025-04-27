@@ -120,6 +120,17 @@ body {
   background-color: rgba(59, 130, 246, 0.1);
 }
 
+/* Add transition for smooth effects */
+.column-drop-zone {
+  transition: all 0.2s ease;
+}
+
+/* Style for empty column drop zone */
+.empty-column-dropzone {
+  background-color: rgba(147, 197, 253, 0.1);
+  border: 2px dashed #3b82f6;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

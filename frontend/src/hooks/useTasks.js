@@ -18,32 +18,17 @@ export function useTasks(projectId) {
   }, [dispatch, projectId]);
 
   const moveTask = async (taskId, targetId, status) => {
-    const previousTasks = [...tasks];
+    const taskToMove = tasks.find((t) => t.id == taskId);
 
-    try {
-      const checksum = generateChecksum(tasks, status);
+    const statusTasks = tasks.filter((t) => t.status === status);
+    statusTasks.sort((a, b) => a.position - b.position);
 
-      const newTasks = calculateNewOrder(tasks, taskId, targetId, status);
-      dispatch(setAllTasks(newTasks));
+    const targetIndex = statusTasks.findIndex((t) => t.id == targetId);
 
-      await axiosClient.patch(`/tasks/${taskId}/position`, {
-        targetId,
-        status,
-        checksum,
-        clientPosition: newTasks.find((t) => t.id == taskId).position,
-      });
-
-      // console.log(response.data.updatedTasks);
-
-      // dispatch(setAllTasks(response.data.updatedTasks));
-    } catch (error) {
-      if (error.response?.status === 409) {
-        await recoverFromError();
-        console.error("Checksum mismatch, recovering...");
-      } else {
-        dispatch(setAllTasks(previousTasks));
-      }
-    }
+    const previousTask = statusTasks[targetIndex - 1] || null;
+    const previousPosition = previousTask?.position ?? null;
+    const nextTask = statusTasks[targetIndex + 1] || null;
+    const nextPosition = nextTask?.position ?? null;
   };
 
   const generateChecksum = (tasks, status) => {
