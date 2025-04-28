@@ -19,11 +19,10 @@ const Board = ({ projectId, users }) => {
   const { tasks, moveTask, updateStatus } = useTasks(projectId);
   const [activeTask, setActiveTask] = useState(null);
 
-  const columns = getTaskFilters(users);
+  const columns = useMemo(() => getTaskFilters(users), [users]);
   const { Status, Priority } = columns;
 
-  // Derive itemsByColumn mapping from tasks, memoized to avoid unnecessary recalculation
-  const initialMapping = useMemo(() => {
+  const [itemsByColumn, setItemsByColumn] = useState(() => {
     const mapping = {};
     Status.forEach((col) => {
       mapping[col.value] = tasks
@@ -31,33 +30,26 @@ const Board = ({ projectId, users }) => {
         .map((t) => t.id.toString());
     });
     return mapping;
-  }, [tasks, Status]);
+  });
 
-  const [itemsByColumn, setItemsByColumn] = useState(initialMapping);
-
-  // Sync itemsByColumn only when initialMapping changes
   useEffect(() => {
-    // Compare keys and arrays shallowly to prevent infinite loop
-    let changed = false;
-    for (const key of Object.keys(initialMapping)) {
-      const prev = itemsByColumn[key] || [];
-      const next = initialMapping[key];
-      if (prev.length !== next.length || prev.some((v, i) => v !== next[i])) {
-        changed = true;
-        break;
-      }
+    const newMapping = {};
+    Status.forEach((col) => {
+      newMapping[col.value] = tasks
+        .filter((t) => t.status === col.value)
+        .map((t) => t.id.toString());
+    });
+
+    if (JSON.stringify(newMapping) !== JSON.stringify(itemsByColumn)) {
+      setItemsByColumn(newMapping);
     }
-    if (changed) {
-      setItemsByColumn(initialMapping);
-    }
-  }, [initialMapping, itemsByColumn]);
+  }, [tasks, Status]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Find container by item ID
   const findContainer = (id) =>
     Object.keys(itemsByColumn).find((key) => itemsByColumn[key]?.includes(id));
 
