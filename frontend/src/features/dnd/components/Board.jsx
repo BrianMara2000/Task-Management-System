@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -21,6 +21,8 @@ const Board = ({ projectId, users }) => {
 
   const columns = useMemo(() => getTaskFilters(users), [users]);
   const { Status, Priority } = columns;
+
+  const isBelowRef = useRef(false);
 
   const [itemsByColumn, setItemsByColumn] = useState(() => {
     const mapping = {};
@@ -45,17 +47,24 @@ const Board = ({ projectId, users }) => {
     }
   }, [tasks, Status]);
 
+  // useEffect(() => {
+  //   console.log(itemsByColumn);
+  // }, [itemsByColumn, tasks, Status]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const findContainer = (id) =>
+  const findContainer = (id) => {
     Object.keys(itemsByColumn).find((key) => itemsByColumn[key]?.includes(id));
+  };
 
   const handleDragOver = ({ active, over }) => {
     if (!over) return;
     const activeId = active.id.toString();
+    // console.log("Over: ", over);
+    // console.log("active: ", active);
     const overId = over.id.toString();
     const sourceCol = findContainer(activeId);
     const targetCol = findContainer(overId) || over.data.current?.columnId;
@@ -68,10 +77,9 @@ const Board = ({ projectId, users }) => {
       const activeIndex = sourceItems.indexOf(activeId);
       const overIndex = targetItems.indexOf(overId);
 
-      const isBelowLast =
-        overIndex === targetItems.length - 1 &&
+      isBelowRef.current =
         active.rect.current.translated.top > over.rect.top + over.rect.height;
-      const insertIndex = overIndex + (isBelowLast ? 1 : 0);
+      const insertIndex = overIndex + (isBelowRef.current ? 1 : 0);
 
       sourceItems.splice(activeIndex, 1);
       targetItems.splice(insertIndex, 0, activeId);
@@ -85,6 +93,7 @@ const Board = ({ projectId, users }) => {
   };
 
   const handleDragEnd = ({ active, over }) => {
+    console.log(isBelowRef.current);
     if (!over || active.id === over.id) return;
     const activeId = active.id.toString();
     const overId = over.id.toString();
@@ -93,7 +102,8 @@ const Board = ({ projectId, users }) => {
     if (!sourceCol || !targetCol) return;
 
     if (sourceCol === targetCol) {
-      moveTask(activeId, overId, sourceCol);
+      console.log(isBelowRef.current);
+      moveTask(activeId, overId, sourceCol, isBelowRef.current);
     } else {
       updateStatus(activeId, targetCol, overId);
     }
