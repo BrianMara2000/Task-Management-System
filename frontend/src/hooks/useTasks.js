@@ -1,5 +1,5 @@
 import { axiosClient } from "@/axios";
-import { setAllTasks } from "@/features/task/taskSlice";
+import { setAllTasks, updateTaskPosition } from "@/features/task/taskSlice";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -17,50 +17,52 @@ export function useTasks(projectId) {
     fetchTasks();
   }, [dispatch, projectId]);
 
-  const moveTask = async (taskId, targetId, status) => {
+  const moveTask = async (taskId, targetId, status, isBelow) => {
+    console.log(isBelow);
     const taskToMove = tasks.find((t) => t.id == taskId);
 
-    const statusTasks = tasks.filter((t) => t.status === status);
-    statusTasks.sort((a, b) => a.position - b.position);
+    if (!taskToMove) return;
+
+    const statusTasks = tasks
+      .filter((t) => t.status === status && t.id !== taskId)
+      .sort((a, b) => a.position - b.position);
 
     const targetIndex = statusTasks.findIndex((t) => t.id == targetId);
+    if (targetIndex === -1) return;
 
     const previousTask = statusTasks[targetIndex - 1] || null;
-    const previousPosition = previousTask?.position ?? null;
     const nextTask = statusTasks[targetIndex + 1] || null;
-    const nextPosition = nextTask?.position ?? null;
-  };
 
-  const generateChecksum = (tasks, status) => {
-    return tasks
-      .filter((t) => t.status === status)
-      .sort((a, b) => a.position - b.position)
-      .map((t) => `${t.id}:${t.position}`)
-      .join("|");
-  };
+    let newPosition;
 
-  const calculateNewOrder = (tasks, taskId, targetId, status) => {
-    const columnTasks = tasks.filter((t) => t.status === status);
-    const taskIndex = columnTasks.findIndex((t) => t.id == taskId);
-    const overIndex = columnTasks.findIndex((t) => t.id == targetId);
+    if (previousTask && nextTask) {
+      newPosition = (previousTask.position + nextTask.position) / 2;
+    } else if (previousTask && !nextTask) {
+      newPosition = previousTask.position + 1;
+    } else if (!previousTask && nextTask) {
+      newPosition = nextTask.position / 2;
+    } else {
+      newPosition = 1000;
+    }
 
-    const fromIndex = tasks.indexOf(columnTasks[taskIndex]);
-    let toIndex = tasks.indexOf(columnTasks[overIndex]);
+    // console.log("Updated task position: ", newPosition);
+    // console.log("Target index: ", targetIndex);
+    // console.log("Previous task: ", previousTask);
+    // console.log("Next task: ", nextTask);
 
-    if (fromIndex < toIndex) toIndex--;
-
-    const newTasks = [...tasks];
-    const [movedTask] = newTasks.splice(fromIndex, 1);
-    newTasks.splice(toIndex, 0, movedTask);
-
-    return newTasks;
-  };
-
-  const recoverFromError = async () => {
-    const response = await axiosClient.get(
-      `/projects/${projectId}/tasks/board`
+    dispatch(
+      updateTaskPosition({
+        taskId,
+        newPosition,
+        newStatus: status,
+      })
     );
-    dispatch(setAllTasks(response.data.data));
+
+    // Optionally sync with backend
+    await axiosClient.put(`/api/tasks/${taskId}/position`, {
+      position: newPosition,
+      status,
+    });
   };
 
   const updateStatus = async (taskId, newStatus, targetId) => {
