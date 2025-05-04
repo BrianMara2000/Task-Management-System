@@ -57,7 +57,7 @@ export function Column({ column, tasks, activeId, indicator, priority }) {
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           <div
             ref={setNodeRef}
-            className="flex flex-col gap-3 overflow-y-auto flex-grow"
+            className="flex flex-col py-4 gap-3 overflow-y-auto flex-grow"
           >
             {tasks.map((task) => {
               const id = task.id.toString();
