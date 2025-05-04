@@ -3,7 +3,6 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
   useSensor,
   useSensors,
   DragOverlay,
@@ -47,49 +46,36 @@ const Board = ({ projectId, users }) => {
     }
   }, [tasks, Status]);
 
-  // useEffect(() => {
-  //   console.log(itemsByColumn);
-  // }, [itemsByColumn, tasks, Status]);
+  useEffect(() => {
+    console.log(itemsByColumn);
+  }, [itemsByColumn, tasks, Status]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 1 },
+      coordinateGetter: (event) => ({
+        x: event.clientX,
+        y: event.clientY,
+      }),
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const findContainer = (id) => {
-    Object.keys(itemsByColumn).find((key) => itemsByColumn[key]?.includes(id));
+    if (id in itemsByColumn) {
+      return id;
+    }
+
+    return Object.keys(itemsByColumn).find((key) =>
+      itemsByColumn[key]?.includes(id)
+    );
   };
 
-  const handleDragOver = ({ active, over }) => {
-    if (!over) return;
-    const activeId = active.id.toString();
-    // console.log("Over: ", over);
-    // console.log("active: ", active);
-    const overId = over.id.toString();
-    const sourceCol = findContainer(activeId);
-    const targetCol = findContainer(overId) || over.data.current?.columnId;
-    if (!sourceCol || !targetCol || sourceCol === targetCol) return;
+  const handleDragOver = ({ over, activatorEvent }) => {
+    const pointerY = activatorEvent.clientY;
+    const overRect = over.rect;
 
-    setItemsByColumn((prev) => {
-      const sourceItems = [...prev[sourceCol]];
-      const targetItems = [...prev[targetCol]];
-
-      const activeIndex = sourceItems.indexOf(activeId);
-      const overIndex = targetItems.indexOf(overId);
-
-      isBelowRef.current =
-        active.rect.current.translated.top > over.rect.top + over.rect.height;
-      const insertIndex = overIndex + (isBelowRef.current ? 1 : 0);
-
-      sourceItems.splice(activeIndex, 1);
-      targetItems.splice(insertIndex, 0, activeId);
-
-      return {
-        ...prev,
-        [sourceCol]: sourceItems,
-        [targetCol]: targetItems,
-      };
-    });
+    isBelowRef.current = pointerY > overRect.top + overRect.height / 2;
   };
 
   const handleDragEnd = ({ active, over }) => {
@@ -114,7 +100,6 @@ const Board = ({ projectId, users }) => {
       <DndContext
         sensors={sensors}
         modifiers={[restrictToWindowEdges]}
-        collisionDetection={closestCorners}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragStart={({ active }) => {
@@ -135,7 +120,12 @@ const Board = ({ projectId, users }) => {
           />
         ))}
 
-        <DragOverlay dropAnimation={{ duration: 150 }}>
+        <DragOverlay
+          dropAnimation={{
+            duration: 0, // No animation
+            easing: "linear",
+          }}
+        >
           {activeTask && (
             <TaskCard
               task={activeTask}
