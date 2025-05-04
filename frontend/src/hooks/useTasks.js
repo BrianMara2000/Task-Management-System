@@ -18,7 +18,7 @@ export function useTasks(projectId) {
   }, [dispatch, projectId]);
 
   const moveTask = async (taskId, targetId, status, isBelow) => {
-    console.log(isBelow);
+    console.log(isBelow, targetId);
     const taskToMove = tasks.find((t) => t.id == taskId);
 
     if (!taskToMove) return;
@@ -30,18 +30,33 @@ export function useTasks(projectId) {
     const targetIndex = statusTasks.findIndex((t) => t.id == targetId);
     if (targetIndex === -1) return;
 
+    const targetTask = statusTasks[targetIndex] || null;
     const previousTask = statusTasks[targetIndex - 1] || null;
     const nextTask = statusTasks[targetIndex + 1] || null;
+
+    const targetTaskPosition = parseFloat(targetTask.position || 0);
+    const previousTaskPosition = parseFloat(previousTask?.position) || 0;
+    const nextTaskPosition = parseFloat(nextTask?.position) || 0;
 
     let newPosition;
 
     if (previousTask && nextTask) {
-      newPosition = (previousTask.position + nextTask.position) / 2;
+      if (isBelow) {
+        newPosition = (previousTaskPosition + targetTaskPosition) / 2;
+        console.log("newPosition: ", newPosition);
+      } else {
+        newPosition = (nextTaskPosition + targetTaskPosition) / 2;
+        console.log("newPosition: ", newPosition);
+      }
     } else if (previousTask && !nextTask) {
-      newPosition = previousTask.position + 1;
+      console.log("first");
+      newPosition = targetTaskPosition + 100;
+      console.log("new position: ", newPosition);
     } else if (!previousTask && nextTask) {
-      newPosition = nextTask.position / 2;
+      console.log("second");
+      newPosition = targetTaskPosition - 100;
     } else {
+      console.log("last");
       newPosition = 1000;
     }
 
@@ -59,9 +74,10 @@ export function useTasks(projectId) {
     );
 
     // Optionally sync with backend
-    await axiosClient.put(`/api/tasks/${taskId}/position`, {
+    await axiosClient.patch(`/tasks/${taskId}/position`, {
       position: newPosition,
       status,
+      targetId,
     });
   };
 
