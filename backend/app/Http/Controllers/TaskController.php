@@ -12,6 +12,7 @@ use App\Http\Requests\StoreTaskRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateTaskRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TaskController extends Controller
 {
@@ -188,50 +189,43 @@ class TaskController extends Controller
         $validated = $request->validate([
             'targetId' => 'required|exists:tasks,id',
             'status' => 'sometimes|required',
-            'checksum' => 'sometimes|string',
-            'clientPosition' => 'sometimes|numeric'
+            'position' => 'sometimes|required|numeric',
         ]);
 
-        $serverTasks = Task::where('project_id', $task->project_id)->where('status', $validated['status'])
-            ->orderBy('position')
-            ->get();
-
-        $serverChecksum = $serverTasks->map(fn($t) => "{$t->id}:{$t->position}")
-            ->join('|');
-
-        if ($request->has('checksum')) {
-            if ($serverChecksum !== $request->checksum) {
-                return response()->json([
-                    'message' => 'Position conflict detected',
-                    'serverState' => $serverTasks->map(fn($t) => ['id' => $t->id, 'position' => $t->position])
-                ], 409);
-            }
-        }
-
         $targetTask = Task::findOrFail($validated['targetId']);
-        $this->reorderTask($task, $targetTask);
+        $position = $validated['position'] ?? null;
+
+        $this->reorderTask($task, $targetTask, $position, $validated['status'] ?? null);
 
         $updatedTasks = Task::where('project_id', $task->project_id)
-            ->orderByDesc('position')
+            ->orderBy('position')
             ->get();
 
         return response()->json([
             'message' => 'Task position updated',
             'updatedTasks' => TaskResource::collection($updatedTasks),
-            'serverChecksum' => $serverChecksum,
-            'clientChecksum' => $request->checksum,
-            'task' => new TaskResource($task->fresh())
 
         ]);
     }
 
-    private function reorderTask(Task $task, Task $targetTask)
+    private function reorderTask(Task $task, Task $targetTask, $position = null, $newStatus = null)
     {
         $project = Project::findOrFail($task->project_id);
+
+        if ($task->project_id !== $targetTask->project_id) {
+            throw ValidationException::withMessages([
+                'targetId' => 'Tasks must be in the same project.',
+            ]);
+        }
+
         $project->reorder_count += 1;
 
         $task = Task::lockForUpdate()->find($task->id);
         $targetTask = Task::lockForUpdate()->find($targetTask->id);
+
+        if ($newStatus && $task->status !== $newStatus) {
+            $task->status = $newStatus;
+        }
 
         if ($project->reorder_count >= 20) {
             $this->normalizeTaskPositions($project->id, $targetTask->status);
@@ -240,46 +234,8 @@ class TaskController extends Controller
 
         $project->save();
 
-        if ($task->project_id !== $targetTask->project_id) {
-            return response()->json(['error' => 'Tasks must be in same project'], 422);
-        }
 
-        $targetPosition = (float) $targetTask->position;
-
-        $previousTask = Task::query()
-            ->where('project_id', $targetTask->project_id)
-            ->where('status', $targetTask->status)
-            ->where('position', '<', $targetPosition)
-            ->where('id', '!=', $targetTask->id)
-            ->orderByDesc('position')
-            ->first();
-
-        $nextTask = Task::query()
-            ->where('project_id', $targetTask->project_id)
-            ->where('status', $targetTask->status)
-            ->where('position', '>', $targetPosition)
-            ->where('id', '!=', $targetTask->id)
-            ->orderBy('position')
-            ->first();
-
-
-        if (!$previousTask && !$nextTask) {
-            $newPosition = 100;
-        } elseif (!$previousTask && $nextTask) {
-            $newPosition = $targetPosition - 100;
-        } elseif (!$nextTask && $previousTask) {
-            $newPosition = $targetPosition + 100;
-        } elseif ($previousTask->id === $task->id) {
-            $newPosition = ($nextTask->position + $targetPosition) / 2;
-        } elseif ($nextTask && $nextTask->id === $task->id) {
-            $newPosition = ($previousTask->position + $targetPosition) / 2;
-        } elseif ($previousTask && $nextTask) {
-            $newPosition = ($previousTask->position + $targetPosition) / 2;
-        } else {
-            $newPosition = $targetPosition + 100;
-        }
-
-        $task->position = $newPosition;
+        $task->position = $position;
         $task->update();
     }
 
