@@ -197,6 +197,11 @@ class TaskController extends Controller
 
         $this->reorderTask($task, $targetTask, $position, $validated['status'] ?? null);
 
+        if ($task->status !== $targetTask->status) {
+            $task->status = $validated['status'];
+            $task->update();
+        }
+
         $updatedTasks = Task::where('project_id', $task->project_id)
             ->orderBy('position')
             ->get();
