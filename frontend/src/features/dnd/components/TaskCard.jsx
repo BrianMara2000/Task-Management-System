@@ -59,7 +59,7 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
                    : statusBorderColors[formatStatus(columnId)]
                } border-l-4 border-solid`}
     >
-      <div className="flex items-center justify-between mb-2">
+      {/* <div className="flex items-center justify-between mb-2">
         <div
           className={`inline-flex items-center gap-2 mb-2 rounded-lg ${matchedPriority.color} px-2 py-1`}
         >
@@ -95,7 +95,7 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
         </Popover>
       </div>
 
-      <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4>
+      <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4> */}
       {/* <p className="text-gray-500 text-sm mb-4">{task.description}</p> */}
       <p>Debugging purposes</p>
       <div className="flex items-center justify-between border-2">
