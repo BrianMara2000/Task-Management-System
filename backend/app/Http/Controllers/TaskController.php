@@ -187,20 +187,27 @@ class TaskController extends Controller
     public function positionUpdate(Task $task, Request $request)
     {
         $validated = $request->validate([
-            'targetId' => 'required|exists:tasks,id',
+            'targetId' => 'nullable|exists:tasks,id',
             'status' => 'sometimes|required',
             'position' => 'sometimes|required|numeric',
         ]);
+
+        //If targetId is empty, it means that we are only updating the status of the task
+        if (empty($validated['targetId'])) {
+            $task->status = $validated['status'];
+            $task->position = $validated['position'];
+            $task->update();
+            return response()->json([
+                'message' => 'Task status updated',
+                'task' => new TaskResource($task),
+            ]);
+        }
 
         $targetTask = Task::findOrFail($validated['targetId']);
         $position = $validated['position'] ?? null;
 
         $this->reorderTask($task, $targetTask, $position, $validated['status'] ?? null);
 
-        if ($task->status !== $targetTask->status) {
-            $task->status = $validated['status'];
-            $task->update();
-        }
 
         $updatedTasks = Task::where('project_id', $task->project_id)
             ->orderBy('position')
