@@ -1,64 +1,198 @@
-import { useState } from "react";
-import { DndContext, closestCorners } from "@dnd-kit/core";
+import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  rectIntersection,
+} from "@dnd-kit/core";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./Column";
 import { useTasks } from "@/hooks/useTasks";
 import { getTaskFilters } from "@/constants/constants";
-import { DragOverlay } from "@dnd-kit/core";
-import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { TaskCard } from "./TaskCard";
 
 const Board = ({ projectId, users }) => {
-  const { tasks, moveTask, updateStatus } = useTasks(projectId);
-  const [activeId, setActiveId] = useState("");
-  const columns = getTaskFilters(users);
-  const { Status, Priority } = columns;
+  const { tasks, moveTask } = useTasks(projectId);
   const [activeTask, setActiveTask] = useState(null);
 
-  const handleDragEnd = async (event) => {
-    const { active, over } = event;
+  const columns = useMemo(() => getTaskFilters(users), [users]);
+  const { Status, Priority } = columns;
+
+  const isBelowRef = useRef(false);
+  const pointerYRef = useRef(0);
+
+  const [itemsByColumn, setItemsByColumn] = useState(() => {
+    const mapping = {};
+    Status.forEach((col) => {
+      mapping[col.value] = tasks
+        .filter((t) => t.status === col.value)
+        .map((t) => t.id.toString());
+    });
+    return mapping;
+  });
+
+  useEffect(() => {
+    const newMapping = {};
+    Status.forEach((col) => {
+      newMapping[col.value] = tasks
+        .filter((t) => t.status === col.value)
+        .map((t) => t.id.toString());
+    });
+
+    if (JSON.stringify(newMapping) !== JSON.stringify(itemsByColumn)) {
+      setItemsByColumn(newMapping);
+    }
+  }, [tasks, Status]);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      pointerYRef.current = e.clientY;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   console.log(itemsByColumn[Status[1].value]);
+  // }, [itemsByColumn, tasks, Status]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 1 },
+      coordinateGetter: (event) => ({
+        x: event.clientX,
+        y: event.clientY,
+      }),
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const findContainer = (id) => {
+    if (id in itemsByColumn) {
+      return id;
+    }
+
+    return Object.keys(itemsByColumn).find((key) =>
+      itemsByColumn[key]?.includes(id)
+    );
+  };
+
+  const handleDragOver = ({ over }) => {
+    if (!over || !over.rect) return;
+
+    const pointerY = pointerYRef.current;
+    const overRect = over.rect;
+
+    isBelowRef.current = pointerY > overRect.top + overRect.height / 2;
+  };
+
+  const handleDragEnd = ({ active, over }) => {
     if (!over || active.id === over.id) return;
 
-    const activeTask = tasks.find(
-      (t) => t.id.toString() === active.id.toString()
-    );
-    const overColumnId =
-      over.data.current?.columnId ||
-      (over.data.current?.accepts ? over.id : activeTask.status);
+    const activeId = active.id.toString();
+    const overId = over.id.toString();
+    const sourceCol = findContainer(activeId);
+    const targetCol = findContainer(overId) || over.data.current?.columnId;
+    if (!sourceCol || !targetCol) return;
 
-    if (activeTask.status === overColumnId) {
-      moveTask(active.id.toString(), over.id.toString(), overColumnId);
-    } else {
-      updateStatus(
-        active.id.toString(),
-        overColumnId,
-        over.data.current?.accepts ? null : over.id.toString()
-      );
+    const isColumnNotEmpty = itemsByColumn[targetCol].length > 0;
+
+    if (overId === targetCol && isColumnNotEmpty) {
+      console.log("Dropped on column but it's not empty – ignoring");
+      return;
     }
+
+    setItemsByColumn((prev) => {
+      const sourceItems = [...prev[sourceCol]];
+      const targetItems = [...prev[targetCol]];
+
+      const activeIndex = sourceItems.indexOf(activeId);
+      const overIndex = targetItems ? targetItems.indexOf(overId) : 0;
+
+      const insertIndex =
+        sourceCol === targetCol
+          ? overIndex
+          : overIndex + (isBelowRef.current ? 1 : 0);
+
+      sourceItems.splice(activeIndex, 1);
+
+      if (targetItems.includes(activeId)) {
+        targetItems.splice(targetItems.indexOf(activeId), 1);
+      }
+
+      targetItems.splice(insertIndex, 0, activeId);
+
+      const nextItemsByColumn = {
+        ...prev,
+        [sourceCol]: sourceItems,
+        [targetCol]: targetItems,
+      };
+
+      // Get the updated tasks immediately
+      // const targetTasks = targetItems
+      //   .map((id) => tasks.find((task) => task.id.toString() === id))
+      //   .filter(Boolean);
+
+      return nextItemsByColumn;
+    });
+    setTimeout(() => {
+      moveTask(
+        activeId,
+        overId,
+        targetCol,
+        isBelowRef.current,
+        itemsByColumn[targetCol]
+      );
+    }, 0);
   };
+
+  // Dnd debugging component to log all droppable containers
+  // Uncomment this to see all droppable containers in the console
+  // const DebugDroppables = () => {
+  //   const { droppableContainers } = useDndContext();
+  //   console.log("All droppables:", droppableContainers);
+  //   return null;
+  // };
 
   return (
     <div className="flex h-screen bg-gray-50 p-4 overflow-x-auto select-none">
       <DndContext
+        sensors={sensors}
         modifiers={[restrictToWindowEdges]}
-        collisionDetection={closestCorners}
+        collisionDetection={rectIntersection}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragStart={({ active }) => {
-          setActiveId(active.id.toString());
-          setActiveTask(tasks.find((t) => t.id.toString() === active.id)); // Optimize this later to avoid delay
+          const id = active.id.toString();
+          const taskObj = tasks.find((t) => t.id.toString() === id);
+          setActiveTask(taskObj);
         }}
       >
-        <div className="flex gap-4">
-          {Status?.map((column) => (
-            <Column
-              key={column.value}
-              column={column}
-              priority={Priority}
-              tasks={tasks.filter((t) => t.status === column.value)}
-              activeId={activeId}
-            />
-          ))}
-        </div>
-        <DragOverlay>
+        {/* <DebugDroppables> */}
+        {Status.map((column) => (
+          <Column
+            key={column.value}
+            column={column}
+            tasks={(itemsByColumn[column.value] || [])
+              .map((id) => tasks.find((task) => task.id.toString() === id))
+              .filter(Boolean)}
+            priority={Priority}
+            activeId={activeTask?.id.toString()}
+          />
+        ))}
+
+        <DragOverlay
+          dropAnimation={{
+            duration: 150,
+          }}
+        >
           {activeTask && (
             <TaskCard
               task={activeTask}
@@ -72,6 +206,7 @@ const Board = ({ projectId, users }) => {
             />
           )}
         </DragOverlay>
+        {/* </DebugDroppables> */}
       </DndContext>
     </div>
   );

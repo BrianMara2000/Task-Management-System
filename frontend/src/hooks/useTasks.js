@@ -1,5 +1,5 @@
 import { axiosClient } from "@/axios";
-import { setAllTasks } from "@/features/task/taskSlice";
+import { setAllTasks, updateTaskPosition } from "@/features/task/taskSlice";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -17,98 +17,80 @@ export function useTasks(projectId) {
     fetchTasks();
   }, [dispatch, projectId]);
 
-  const moveTask = async (taskId, targetId, status) => {
+  const moveTask = async (taskId, targetId, status, isBelow, targetItems) => {
     const previousTasks = [...tasks];
-
+    console.log("targetItems: ", targetItems);
     try {
-      const checksum = generateChecksum(tasks, status);
+      let newPosition;
+      const taskToMove = tasks.find((t) => t.id == taskId);
 
-      const newTasks = calculateNewOrder(tasks, taskId, targetId, status);
-      dispatch(setAllTasks(newTasks));
+      if (!taskToMove) return;
 
-      await axiosClient.patch(`/tasks/${taskId}/position`, {
-        targetId,
-        status,
-        checksum,
-        clientPosition: newTasks.find((t) => t.id == taskId).position,
-      });
+      //For empty column
+      const isEmptyColumn = targetId === status;
 
-      // console.log(response.data.updatedTasks);
+      if (isEmptyColumn) {
+        newPosition = 100;
+        await axiosClient.patch(`/tasks/${taskId}/position`, {
+          position: newPosition,
+          status,
+          targetId: null,
+        });
 
-      // dispatch(setAllTasks(response.data.updatedTasks));
-    } catch (error) {
-      if (error.response?.status === 409) {
-        await recoverFromError();
-        console.error("Checksum mismatch, recovering...");
-      } else {
-        dispatch(setAllTasks(previousTasks));
+        return;
       }
-    }
-  };
 
-  const generateChecksum = (tasks, status) => {
-    return tasks
-      .filter((t) => t.status === status)
-      .sort((a, b) => a.position - b.position)
-      .map((t) => `${t.id}:${t.position}`)
-      .join("|");
-  };
+      const statusTasks = targetItems
+        .map((id) => tasks.find((task) => task.id.toString() === id))
+        .filter(Boolean);
 
-  const calculateNewOrder = (tasks, taskId, targetId, status) => {
-    const columnTasks = tasks.filter((t) => t.status === status);
-    const taskIndex = columnTasks.findIndex((t) => t.id == taskId);
-    const overIndex = columnTasks.findIndex((t) => t.id == targetId);
+      console.log("Status tasks: ", statusTasks);
+      console.log("targetId: ", targetId);
+      const targetIndex = statusTasks.findIndex((t) => t.id == targetId);
 
-    const fromIndex = tasks.indexOf(columnTasks[taskIndex]);
-    let toIndex = tasks.indexOf(columnTasks[overIndex]);
+      console.log("targetIndex: ", targetIndex);
+      if (targetIndex === -1) return;
 
-    if (fromIndex < toIndex) toIndex--;
+      const targetTask = statusTasks[targetIndex] || null;
+      const previousTask = statusTasks[targetIndex - 1] || null;
+      const nextTask = statusTasks[targetIndex + 1] || null;
 
-    const newTasks = [...tasks];
-    const [movedTask] = newTasks.splice(fromIndex, 1);
-    newTasks.splice(toIndex, 0, movedTask);
+      const targetTaskPosition = parseFloat(targetTask.position || 0);
+      const previousTaskPosition = parseFloat(previousTask?.position) || 0;
+      const nextTaskPosition = parseFloat(nextTask?.position) || 0;
 
-    return newTasks;
-  };
+      if (previousTask && nextTask) {
+        if (isBelow) {
+          newPosition = (previousTaskPosition + targetTaskPosition) / 2;
+        } else {
+          newPosition = (nextTaskPosition + targetTaskPosition) / 2;
+        }
+      } else if (previousTask && !nextTask) {
+        newPosition = targetTaskPosition + 100;
+      } else if (!previousTask && nextTask) {
+        newPosition = targetTaskPosition - 100;
+      } else {
+        newPosition = 1000;
+      }
 
-  const recoverFromError = async () => {
-    const response = await axiosClient.get(
-      `/projects/${projectId}/tasks/board`
-    );
-    dispatch(setAllTasks(response.data.data));
-  };
-
-  const updateStatus = async (taskId, newStatus, targetId) => {
-    const previousTasks = [...tasks];
-
-    try {
-      const statusTask = tasks.filter((t) => t.status === newStatus);
-
-      const newTasks = tasks.map((task) =>
-        task.id == taskId ? { ...task, status: newStatus } : task
+      dispatch(
+        updateTaskPosition({
+          taskId,
+          newPosition,
+          newStatus: status,
+        })
       );
 
-      const taskToMove = newTasks.find((task) => task.id == taskId);
-      const filtered = newTasks.filter((task) => task.id != taskId);
-
-      const insertAt = targetId
-        ? filtered.findIndex((task) => task.id == targetId)
-        : statusTask.length;
-
-      filtered.splice(insertAt, 0, taskToMove);
-
-      dispatch(setAllTasks(filtered));
-
-      await axiosClient.patch(`/tasks/${taskId}`, {
-        status: newStatus,
+      await axiosClient.patch(`/tasks/${taskId}/position`, {
+        position: newPosition,
+        status,
         targetId,
       });
     } catch (error) {
-      // Revert on error
       dispatch(setAllTasks(previousTasks));
-      console.error("Status update failed:", error);
+      console.error("Error moving task:", error);
     }
   };
 
-  return { tasks, moveTask, updateStatus };
+  return { tasks, moveTask };
 }
