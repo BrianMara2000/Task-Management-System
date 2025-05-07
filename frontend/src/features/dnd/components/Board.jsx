@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  rectIntersection,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
@@ -15,13 +16,14 @@ import { getTaskFilters } from "@/constants/constants";
 import { TaskCard } from "./TaskCard";
 
 const Board = ({ projectId, users }) => {
-  const { tasks, moveTask, updateStatus } = useTasks(projectId);
+  const { tasks, moveTask } = useTasks(projectId);
   const [activeTask, setActiveTask] = useState(null);
 
   const columns = useMemo(() => getTaskFilters(users), [users]);
   const { Status, Priority } = columns;
 
   const isBelowRef = useRef(false);
+  const pointerYRef = useRef(0);
 
   const [itemsByColumn, setItemsByColumn] = useState(() => {
     const mapping = {};
@@ -47,8 +49,19 @@ const Board = ({ projectId, users }) => {
   }, [tasks, Status]);
 
   useEffect(() => {
-    console.log(itemsByColumn);
-  }, [itemsByColumn, tasks, Status]);
+    const handleMouseMove = (e) => {
+      pointerYRef.current = e.clientY;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   console.log(itemsByColumn[Status[1].value]);
+  // }, [itemsByColumn, tasks, Status]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -71,35 +84,89 @@ const Board = ({ projectId, users }) => {
     );
   };
 
-  const handleDragOver = ({ over, activatorEvent }) => {
-    const pointerY = activatorEvent.clientY;
+  const handleDragOver = ({ over }) => {
+    if (!over || !over.rect) return;
+
+    const pointerY = pointerYRef.current;
     const overRect = over.rect;
 
     isBelowRef.current = pointerY > overRect.top + overRect.height / 2;
   };
 
   const handleDragEnd = ({ active, over }) => {
-    console.log(isBelowRef.current);
     if (!over || active.id === over.id) return;
+
     const activeId = active.id.toString();
     const overId = over.id.toString();
     const sourceCol = findContainer(activeId);
     const targetCol = findContainer(overId) || over.data.current?.columnId;
     if (!sourceCol || !targetCol) return;
 
-    if (sourceCol === targetCol) {
-      console.log(isBelowRef.current);
-      moveTask(activeId, overId, sourceCol, isBelowRef.current);
-    } else {
-      updateStatus(activeId, targetCol, overId);
+    const isColumnNotEmpty = itemsByColumn[targetCol].length > 0;
+
+    if (overId === targetCol && isColumnNotEmpty) {
+      console.log("Dropped on column but it's not empty – ignoring");
+      return;
     }
+
+    setItemsByColumn((prev) => {
+      const sourceItems = [...prev[sourceCol]];
+      const targetItems = [...prev[targetCol]];
+
+      const activeIndex = sourceItems.indexOf(activeId);
+      const overIndex = targetItems ? targetItems.indexOf(overId) : 0;
+
+      const insertIndex =
+        sourceCol === targetCol
+          ? overIndex
+          : overIndex + (isBelowRef.current ? 1 : 0);
+
+      sourceItems.splice(activeIndex, 1);
+
+      if (targetItems.includes(activeId)) {
+        targetItems.splice(targetItems.indexOf(activeId), 1);
+      }
+
+      targetItems.splice(insertIndex, 0, activeId);
+
+      const nextItemsByColumn = {
+        ...prev,
+        [sourceCol]: sourceItems,
+        [targetCol]: targetItems,
+      };
+
+      // Get the updated tasks immediately
+      // const targetTasks = targetItems
+      //   .map((id) => tasks.find((task) => task.id.toString() === id))
+      //   .filter(Boolean);
+
+      return nextItemsByColumn;
+    });
+    setTimeout(() => {
+      moveTask(
+        activeId,
+        overId,
+        targetCol,
+        isBelowRef.current,
+        itemsByColumn[targetCol]
+      );
+    }, 0);
   };
+
+  // Dnd debugging component to log all droppable containers
+  // Uncomment this to see all droppable containers in the console
+  // const DebugDroppables = () => {
+  //   const { droppableContainers } = useDndContext();
+  //   console.log("All droppables:", droppableContainers);
+  //   return null;
+  // };
 
   return (
     <div className="flex h-screen bg-gray-50 p-4 overflow-x-auto select-none">
       <DndContext
         sensors={sensors}
         modifiers={[restrictToWindowEdges]}
+        collisionDetection={rectIntersection}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragStart={({ active }) => {
@@ -108,6 +175,7 @@ const Board = ({ projectId, users }) => {
           setActiveTask(taskObj);
         }}
       >
+        {/* <DebugDroppables> */}
         {Status.map((column) => (
           <Column
             key={column.value}
@@ -122,8 +190,7 @@ const Board = ({ projectId, users }) => {
 
         <DragOverlay
           dropAnimation={{
-            duration: 0, // No animation
-            easing: "linear",
+            duration: 150,
           }}
         >
           {activeTask && (
@@ -139,6 +206,7 @@ const Board = ({ projectId, users }) => {
             />
           )}
         </DragOverlay>
+        {/* </DebugDroppables> */}
       </DndContext>
     </div>
   );
