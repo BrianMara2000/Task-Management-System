@@ -14,21 +14,16 @@ import {
 } from "@/components/ui/tooltip";
 import { PlusCircle } from "lucide-react";
 
-export function Column({ column, tasks, activeId, indicator, priority }) {
-  // Set droppable zone to the column key
-  const { setNodeRef } = useDroppable({
+export function Column({ column, tasks, activeId, priority }) {
+  const { setNodeRef, isOver } = useDroppable({
     id: column.value,
-    data: { accepts: ["task"], columnId: column.value },
+    data: { type: "column", accepts: ["task"], columnId: column.value },
   });
-
-  const showPlaceholder =
-    indicator?.show && indicator.columnId === column.value;
 
   const taskIds = tasks.map((t) => t.id.toString());
 
   return (
     <div className="flex gap-4">
-      {/* Column header stays outside SortableContext */}
       <div className="relative flex flex-col w-full transition-all rounded-lg p-3">
         <div
           className={`flex ${
@@ -54,46 +49,33 @@ export function Column({ column, tasks, activeId, indicator, priority }) {
         </div>
 
         {/* Tasks list with sortable context */}
-        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-          <div
-            ref={setNodeRef}
-            className="flex flex-col py-4 gap-3 overflow-y-auto flex-grow"
+        <div
+          ref={setNodeRef}
+          data-droppable-id={column.value}
+          className={`flex flex-col py-4 gap-3 overflow-y-auto  flex-grow ${
+            isOver ? "bg-red-200" : ""
+          }`}
+        >
+          <SortableContext
+            items={taskIds}
+            strategy={verticalListSortingStrategy}
           >
-            {tasks.map((task) => {
-              const id = task.id.toString();
-              return (
-                <React.Fragment key={id}>
-                  {/* Placeholder BEFORE */}
-                  {showPlaceholder &&
-                    indicator.position === "before" &&
-                    indicator.targetId === id && (
-                      <div className="h-2 bg-blue-400 rounded my-1" />
-                    )}
-
-                  {/* The actual task card */}
-                  <TaskCard
-                    task={task}
-                    priority={priority}
-                    columnId={column.value}
-                    isDragging={activeId === id}
-                  />
-
-                  {/* Placeholder AFTER */}
-                  {showPlaceholder &&
-                    indicator.position === "after" &&
-                    indicator.targetId === id && (
-                      <div className="h-2 bg-blue-400 rounded my-1" />
-                    )}
-                </React.Fragment>
-              );
-            })}
-
-            {/* Placeholder at end of column */}
-            {showPlaceholder && indicator.position === "end" && (
-              <div className="h-2 bg-blue-400 rounded my-1" />
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                priority={priority}
+                columnId={column.value}
+                isDragging={activeId == task.id}
+              />
+            ))}
+            {tasks.length === 0 && (
+              <div className="p-4 text-center text-gray-400 border-2 border-dashed border-blue-400 rounded">
+                Drop a task here
+              </div>
             )}
-          </div>
-        </SortableContext>
+          </SortableContext>
+        </div>
       </div>
     </div>
   );
