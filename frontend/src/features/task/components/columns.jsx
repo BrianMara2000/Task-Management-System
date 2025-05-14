@@ -142,6 +142,6 @@ export const columns = [
   columnHelper.display({
     header: "Actions",
     id: "actions",
-    cell: ({ row }) => <Actions task={row.original} />,
+    cell: ({ row }) => <Actions task={row.original} type="list" />,
   }),
 ];
