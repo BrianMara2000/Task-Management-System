@@ -15,17 +15,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Edit, Ellipsis } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useState } from "react";
+import Actions from "@/features/task/components/Actions";
 
 export function TaskCard({ task, isDragging, priority, columnId }) {
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: task.id.toString(),
@@ -79,20 +71,7 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
           </span>
         </div>
 
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-          <PopoverTrigger
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()} // ⬅️ This is critical!
-            className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-white transition duration-200 ease-in-out"
-          >
-            <Ellipsis className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
-          </PopoverTrigger>
-
-          <PopoverContent className="flex flex-col w-40 p-1 gap-2 bg-white shadow-lg rounded-md">
-            <Edit className="h-5 w-5" />
-            <span>View</span>
-          </PopoverContent>
-        </Popover>
+        <Actions task={task} type="board" />
       </div>
 
       <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4>

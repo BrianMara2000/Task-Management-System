@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Ellipsis,
   EllipsisVerticalIcon,
   SquarePen,
   Trash2Icon,
@@ -45,7 +46,7 @@ import { cn } from "@/lib/utils";
 import { getColorFromName } from "@/constants/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function Actions({ task }) {
+export default function Actions({ task, type }) {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -132,7 +133,11 @@ export default function Actions({ task }) {
         closeButton: true,
       });
     } catch (error) {
+      toast.error("Error", {
+        description: "Failed to update the task. Please try again.",
+      });
       setErrors(error.response?.data.errors);
+      console.error("Failed to update task:", error);
     } finally {
       setIsPopoverOpen(false);
       setIsLoading(false);
@@ -157,7 +162,11 @@ export default function Actions({ task }) {
     <div className="flex items-center gap-2">
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-white transition duration-200 ease-in-out hover:bg-indigo-100 hover:text-indigo-600 focus:ring-2 focus:ring-indigo-400">
-          <EllipsisVerticalIcon className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
+          {type === "list" ? (
+            <EllipsisVerticalIcon className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
+          ) : (
+            <Ellipsis className="h-5 w-5 text-purple-500 transition duration-200 group-hover:text-purple-800" />
+          )}
         </PopoverTrigger>
 
         <PopoverContent
