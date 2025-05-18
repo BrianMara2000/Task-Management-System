@@ -133,7 +133,11 @@ export default function Actions({ task, type }) {
         closeButton: true,
       });
     } catch (error) {
+      toast.error("Error", {
+        description: "Failed to update the task. Please try again.",
+      });
       setErrors(error.response?.data.errors);
+      console.error("Failed to update task:", error);
     } finally {
       setIsPopoverOpen(false);
       setIsLoading(false);
