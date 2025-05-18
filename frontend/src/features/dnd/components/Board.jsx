@@ -15,8 +15,8 @@ import { useTasks } from "@/hooks/useTasks";
 import { getTaskFilters } from "@/constants/constants";
 import { TaskCard } from "./TaskCard";
 
-const Board = ({ projectId, users }) => {
-  const { tasks, moveTask } = useTasks(projectId);
+const Board = ({ projectId, users, tasks }) => {
+  const { moveTask } = useTasks(projectId, tasks);
   const [activeTask, setActiveTask] = useState(null);
 
   const columns = useMemo(() => getTaskFilters(users), [users]);

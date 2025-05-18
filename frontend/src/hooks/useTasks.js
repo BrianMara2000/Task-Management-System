@@ -1,11 +1,10 @@
 import { axiosClient } from "@/axios";
 import { setAllTasks, updateTaskPosition } from "@/features/task/taskSlice";
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
-export function useTasks(projectId) {
+export function useTasks(projectId, tasks) {
   const dispatch = useDispatch();
-  const tasks = useSelector((state) => state.task.allTasks);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -44,11 +43,8 @@ export function useTasks(projectId) {
         .map((id) => tasks.find((task) => task.id.toString() === id))
         .filter(Boolean);
 
-      console.log("Status tasks: ", statusTasks);
-      console.log("targetId: ", targetId);
       const targetIndex = statusTasks.findIndex((t) => t.id == targetId);
 
-      console.log("targetIndex: ", targetIndex);
       if (targetIndex === -1) return;
 
       const targetTask = statusTasks[targetIndex] || null;
@@ -92,5 +88,5 @@ export function useTasks(projectId) {
     }
   };
 
-  return { tasks, moveTask };
+  return { moveTask };
 }
