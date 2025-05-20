@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Comment extends Model
 {
-    protected $fillable = ['task_id', 'user_id', 'content'];
+    protected $fillable = ['task_id', 'created_by', 'updated_by', 'content'];
 
     public function task(): BelongsTo
     {
@@ -16,6 +16,6 @@ class Comment extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
