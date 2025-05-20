@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\InviteUserController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
@@ -32,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::patch('/tasks/{task}', [TaskController::class, 'statusUpdate']);
   Route::patch('/tasks/{task}/position', [TaskController::class, 'positionUpdate']);
 
+  Route::get('/tasks/{task}/comments', [CommentController::class, 'index']);
+  Route::post('/tasks/{task}/comments', [CommentController::class, 'store']);
 
   Route::post('users/invite-user', [InviteUserController::class, 'inviteUser']);
 });
