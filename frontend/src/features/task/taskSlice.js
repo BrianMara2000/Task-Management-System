@@ -57,6 +57,10 @@ const taskSlice = createSlice({
       state.tasks = state.tasks.map((task) =>
         task.id === action.payload.id ? action.payload : task
       );
+
+      state.allTasks = state.allTasks.map((task) =>
+        task.id === action.payload.id ? action.payload : task
+      );
     },
 
     deleteTask: (state, action) => {
