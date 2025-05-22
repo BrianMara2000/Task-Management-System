@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  task: {},
   tasks: [],
   allTasks: [],
   filters: {
@@ -22,9 +21,6 @@ const taskSlice = createSlice({
   name: "task",
   initialState,
   reducers: {
-    setTask: (state, action) => {
-      state.task = action.payload;
-    },
     setTasks: (state, action) => {
       state.tasks = action.payload;
     },
@@ -80,7 +76,6 @@ const taskSlice = createSlice({
 });
 
 export const {
-  setTask,
   setTasks,
   setAllTasks,
   setFilters,
