@@ -61,16 +61,21 @@ const taskSlice = createSlice({
 
     deleteTask: (state, action) => {
       state.tasks = state.tasks.filter((task) => task.id !== action.payload);
+
+      state.allTasks = state.allTasks.filter(
+        (task) => task.id !== action.payload
+      );
     },
 
     updateTaskPosition: (state, action) => {
       const { taskId, newPosition, newStatus } = action.payload;
       const id = Number(taskId);
-      const task = state.tasks.find((t) => t.id === id);
-      if (task) {
-        task.position = newPosition;
-        task.status = newStatus;
-      }
+      console.log("Position change");
+      state.allTasks = state.allTasks.map((task) =>
+        task.id === id
+          ? { ...task, position: newPosition, status: newStatus }
+          : task
+      );
     },
   },
 });
