@@ -16,6 +16,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Actions from "@/features/task/components/Actions";
+import TaskForm from "@/components/form/TaskForm";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 export function TaskCard({ task, isDragging, priority, columnId }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -74,8 +76,16 @@ export function TaskCard({ task, isDragging, priority, columnId }) {
         <Actions task={task} type="board" />
       </div>
 
-      <h4 className="font-medium line-clamp-2 mb-4">{task.name}</h4>
-      <p className="text-gray-500 text-sm mb-4">{task.description}</p>
+      <Dialog>
+        <DialogTrigger asChild>
+          <h4 className="font-medium line-clamp-2 mb-4 hover:underline">
+            {task.name}
+          </h4>
+        </DialogTrigger>
+
+        <TaskForm task={task} />
+      </Dialog>
+      <p className="text-gray-500 text-sm mb-4 ">{task.description}</p>
       <p>Debugging purposes</p>
       <div className="flex items-center justify-between border-2">
         <p className=" text-xs text-gray-500 font-bold">Task Id: {task.id}</p>
