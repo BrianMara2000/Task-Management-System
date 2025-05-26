@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  task: {},
   tasks: [],
   allTasks: [],
   filters: {
@@ -22,9 +21,6 @@ const taskSlice = createSlice({
   name: "task",
   initialState,
   reducers: {
-    setTask: (state, action) => {
-      state.task = action.payload;
-    },
     setTasks: (state, action) => {
       state.tasks = action.payload;
     },
@@ -57,26 +53,40 @@ const taskSlice = createSlice({
       state.tasks = state.tasks.map((task) =>
         task.id === action.payload.id ? action.payload : task
       );
+
+      state.allTasks = state.allTasks.map((task) =>
+        task.id === action.payload.id ? action.payload : task
+      );
     },
 
     deleteTask: (state, action) => {
       state.tasks = state.tasks.filter((task) => task.id !== action.payload);
+
+      state.allTasks = state.allTasks.filter(
+        (task) => task.id !== action.payload
+      );
     },
 
     updateTaskPosition: (state, action) => {
       const { taskId, newPosition, newStatus } = action.payload;
       const id = Number(taskId);
-      const task = state.tasks.find((t) => t.id === id);
-      if (task) {
-        task.position = newPosition;
-        task.status = newStatus;
-      }
+      state.allTasks = state.allTasks.map((task) => {
+        if (task.id === id) {
+          const updatedTask = {
+            ...task,
+            position: newPosition,
+            status: newStatus,
+          };
+          // console.log("🔄 Updated Task:", updatedTask);
+          return updatedTask;
+        }
+        return task;
+      });
     },
   },
 });
 
 export const {
-  setTask,
   setTasks,
   setAllTasks,
   setFilters,

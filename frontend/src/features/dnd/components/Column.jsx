@@ -28,7 +28,7 @@ export function Column({ column, tasks, activeId, priority }) {
         <div
           className={`flex ${
             statusColors[column.name]
-          } w-full p-4 rounded-lg justify-between items-center gap-2`}
+          } w-full px-4 py-3 rounded-lg justify-between items-center gap-2`}
         >
           <div className="flex items-center gap-2">
             <span className="bg-white text-gray-500 px-2 py-1 font-bold rounded-full text-xs">
