@@ -11,12 +11,10 @@ import {
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./Column";
-import { useTasks } from "@/hooks/useTasks";
 import { getTaskFilters } from "@/constants/constants";
 import { TaskCard } from "./TaskCard";
 
-const Board = ({ projectId, users, tasks }) => {
-  const { moveTask } = useTasks(projectId);
+const Board = ({ users, tasks, moveTask }) => {
   const [activeTask, setActiveTask] = useState(null);
 
   const columns = useMemo(() => getTaskFilters(users), [users]);
@@ -36,19 +34,6 @@ const Board = ({ projectId, users, tasks }) => {
   });
 
   useEffect(() => {
-    const newMapping = {};
-    Status.forEach((col) => {
-      newMapping[col.value] = tasks
-        .filter((t) => t.status === col.value)
-        .map((t) => t.id.toString());
-    });
-
-    if (JSON.stringify(newMapping) !== JSON.stringify(itemsByColumn)) {
-      setItemsByColumn(newMapping);
-    }
-  }, [tasks, Status]);
-
-  useEffect(() => {
     const handleMouseMove = (e) => {
       pointerYRef.current = e.clientY;
     };
@@ -58,10 +43,6 @@ const Board = ({ projectId, users, tasks }) => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, []);
-
-  // useEffect(() => {
-  //   console.log(itemsByColumn[Status[1].value]);
-  // }, [itemsByColumn, tasks, Status]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -135,22 +116,16 @@ const Board = ({ projectId, users, tasks }) => {
         [targetCol]: targetItems,
       };
 
-      // Get the updated tasks immediately
-      // const targetTasks = targetItems
-      //   .map((id) => tasks.find((task) => task.id.toString() === id))
-      //   .filter(Boolean);
-
       return nextItemsByColumn;
     });
-    setTimeout(() => {
-      moveTask(
-        activeId,
-        overId,
-        targetCol,
-        isBelowRef.current,
-        itemsByColumn[targetCol]
-      );
-    }, 0);
+
+    moveTask(
+      activeId,
+      overId,
+      targetCol,
+      isBelowRef.current,
+      itemsByColumn[targetCol]
+    );
   };
 
   // Dnd debugging component to log all droppable containers
