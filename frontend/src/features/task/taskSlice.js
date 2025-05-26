@@ -70,12 +70,18 @@ const taskSlice = createSlice({
     updateTaskPosition: (state, action) => {
       const { taskId, newPosition, newStatus } = action.payload;
       const id = Number(taskId);
-      console.log("Position change");
-      state.allTasks = state.allTasks.map((task) =>
-        task.id === id
-          ? { ...task, position: newPosition, status: newStatus }
-          : task
-      );
+      state.allTasks = state.allTasks.map((task) => {
+        if (task.id === id) {
+          const updatedTask = {
+            ...task,
+            position: newPosition,
+            status: newStatus,
+          };
+          // console.log("🔄 Updated Task:", updatedTask);
+          return updatedTask;
+        }
+        return task;
+      });
     },
   },
 });
