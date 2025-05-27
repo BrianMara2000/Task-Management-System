@@ -9,7 +9,7 @@ import {
   rectIntersection,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+// import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./Column";
 import { getTaskFilters } from "@/constants/constants";
 import { TaskCard } from "./TaskCard";
@@ -51,8 +51,8 @@ const Board = ({ users, tasks, moveTask }) => {
         x: event.clientX,
         y: event.clientY,
       }),
-    }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    })
+    // useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const findContainer = (id) => {
