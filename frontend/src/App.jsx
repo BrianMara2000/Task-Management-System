@@ -1,33 +1,41 @@
 import AppRoutes from "./routes/AppRoutes";
 import "./index.css";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUser, setToken } from "@/features/auth/authSlice";
 import { axiosClient } from "./axios";
 
 const App = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
-
+  const user = useSelector((state) => state.auth.user);
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    if (token) {
-      dispatch(setToken(token));
-      axiosClient
-        .get("/getUser")
-        .then((response) => {
+    const fetchUser = async () => {
+      if (token) {
+        dispatch(setToken(token));
+        try {
+          const response = await axiosClient.get("/getUser");
           dispatch(setUser(response.data));
-        })
-        .catch(() => {
+        } catch (error) {
           localStorage.removeItem("token");
           dispatch(setToken(null));
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+          console.error("Failed to fetch user:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
   }, [dispatch]);
+
+  useEffect(() => {
+    console.log("user: ", user);
+  }, [user]);
 
   if (loading) return <div>Loading...</div>; // Optional: Add a loading indicator
 
