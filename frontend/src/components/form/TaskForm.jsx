@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useDispatch, useSelector } from "react-redux";
@@ -38,9 +38,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "../ui/card";
 import Comments from "@/features/comments/components/Comments";
+import { setComments } from "@/features/comments/commentSlice";
 
 const TaskForm = ({ task }) => {
   const dispatch = useDispatch();
+  const comments = useSelector((state) => state.comment.comments);
+  const users = useSelector((state) => state.user.users);
 
   const [selectedTask, setSelectedTask] = useState({
     name: task.name,
@@ -53,8 +56,6 @@ const TaskForm = ({ task }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState([null]);
-
-  const users = useSelector((state) => state.user.users);
 
   const handleUpload = (file) => {
     setSelectedTask((prevtask) => ({
@@ -112,6 +113,19 @@ const TaskForm = ({ task }) => {
     }
   };
 
+  const getComments = useCallback(async () => {
+    try {
+      const response = await axiosClient.get(`/tasks/${task.id}/comments`);
+      dispatch(setComments(response.data));
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  }, [dispatch, task.id]);
+
+  useEffect(() => {
+    getComments();
+  }, [getComments]);
+
   useEffect(() => {
     if (task) {
       setSelectedTask({
@@ -134,7 +148,7 @@ const TaskForm = ({ task }) => {
         </DialogDescription>
       </DialogHeader>
 
-      <ScrollArea className="h-[500px] w-full p-3">
+      <ScrollArea className="h-[700px] w-full p-3">
         {/* Form Content */}
         {isLoading ? (
           <div className="grid gap-4 py-4">
@@ -146,7 +160,7 @@ const TaskForm = ({ task }) => {
         ) : (
           <form onSubmit={handleSubmit} encType="multipart/form-data">
             <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-6 py-4">
-              <div className="flex flex-col col-span-2 gap-4">
+              <div className="flex flex-col col-span-2 gap-4 relative">
                 <Card>
                   {/* Name Field */}
                   <CardContent>
@@ -193,8 +207,14 @@ const TaskForm = ({ task }) => {
                     )}
                   </CardContent>
                 </Card>
-                <DialogTitle>Comments</DialogTitle>
-                <Comments taskId={task.id} />
+                <div className="flex items-center mt-5 gap-2">
+                  <DialogTitle>Comments</DialogTitle>
+                  <span className="bg-gray-300 px-2 py-1 font-bold rounded-full text-xs">
+                    {comments.length}
+                  </span>
+                </div>
+
+                <Comments comments={comments} taskId={task.id} />
               </div>
               {/* Right: Form Fields */}
               <div className="flex flex-col col-span-1 gap-4">
@@ -389,19 +409,28 @@ const TaskForm = ({ task }) => {
                       )}
                     </div>
                   </CardContent>
+                  <CardContent className="flex items-center justify-end">
+                    <Button
+                      className="bg-purple-500 w-1/2 md:w-auto rounded-md shadow-md"
+                      type="submit"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </CardContent>
                 </Card>
               </div>
             </div>
 
             {/* Save Button */}
             <DialogFooter>
-              <Button
+              {/* <Button
                 className="bg-purple-500 w-full md:w-auto rounded-md shadow-md"
                 type="submit"
                 disabled={isLoading}
               >
                 {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
+              </Button> */}
             </DialogFooter>
           </form>
         )}
