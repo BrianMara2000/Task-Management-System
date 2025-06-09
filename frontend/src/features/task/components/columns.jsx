@@ -43,34 +43,40 @@ export const columns = [
   //   header: "ID",
   //   cell: ({ row }) => <span>{row.original.id}</span>,
   // }),
-  columnHelper.accessor("image_path", {
-    header: "Image",
-    cell: ({ row }) => (
-      <Avatar className="rounded w-14 h-10">
-        <AvatarImage
-          src={row.original.image_path}
-          alt={row.original.name}
-          className="w-full h-full object-cover"
-        />
-        <AvatarFallback
-          className={`rounded w-14 h-10 ${getColorFromName(
-            row.original.name
-          )} text-white font-bold`}
-        >
-          {row.original.name.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
-    ),
-  }),
+  // columnHelper.accessor("image_path", {
+  //   header: "Image",
+  //   cell: ({ row }) => (
+  //     <Avatar className="rounded w-14 h-10">
+  //       <AvatarImage
+  //         src={row.original.image_path}
+  //         alt={row.original.name}
+  //         className="w-full h-full object-cover"
+  //       />
+  //       <AvatarFallback
+  //         className={`rounded w-14 h-10 ${getColorFromName(
+  //           row.original.name
+  //         )} text-white font-bold`}
+  //       >
+  //         {row.original.name.charAt(0)}
+  //       </AvatarFallback>
+  //     </Avatar>
+  //   ),
+  // }),
+
   columnHelper.accessor("name", {
-    header: "Task Name",
+    header: () => (
+      <span className="flex items-center justify-start">Task Name</span>
+    ),
     size: 250, // Set width in pixels
     minSize: 100, // Minimum width
     maxSize: 200,
   }),
+
   columnHelper.display({
     id: "status",
-    header: "Task Status",
+    header: () => (
+      <span className="flex items-center justify-start">Task Status</span>
+    ),
     cell: ({ row }) => <StatusUpdate task={row.original} />,
   }),
 
@@ -134,13 +140,19 @@ export const columns = [
   },
 
   columnHelper.accessor("created_at", {
-    header: "Create Date",
+    header: () => (
+      <span className="flex items-center justify-start">Create Date</span>
+    ),
   }),
   columnHelper.accessor("due_date", {
-    header: "Due Date",
+    header: () => (
+      <span className="flex items-center justify-start">Due Date</span>
+    ),
   }),
   columnHelper.display({
-    header: "Actions",
+    header: () => (
+      <span className="flex items-center justify-start">Actions</span>
+    ),
     id: "actions",
     cell: ({ row }) => <Actions task={row.original} type="list" />,
   }),
