@@ -28,6 +28,7 @@ const Comments = ({ comments, taskId }) => {
       id: Date.now(), // temporary ID
       content: comment,
       pending: true, // optional: flag for loading state
+      user: user,
     };
 
     dispatch(addComment({ comment: tempComment }));
@@ -43,7 +44,7 @@ const Comments = ({ comments, taskId }) => {
   };
 
   useEffect(() => {
-    console.log("Comments added: ", comments);
+    console.log("Comments users: ", comments.user);
   }, [comments]);
 
   return (
@@ -99,14 +100,14 @@ const Comments = ({ comments, taskId }) => {
             <Avatar>
               <AvatarImage
                 className="rounded-full w-8 h-8 object-cover"
-                src={comment.user.profile_image}
+                src={comment.user?.profile_image}
                 alt="Project Image"
               />
-              <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{comment.user?.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-3">
               <div className="flex flex-col">
-                <p className="font-semibold text-sm">{comment.user.name}</p>
+                <p className="font-semibold text-sm">{comment.user?.name}</p>
                 <p className="text-[12px] text-gray-500">5 seconds ago</p>
               </div>
               <p className="text-sm text-gray-700">{comment.comment}</p>
