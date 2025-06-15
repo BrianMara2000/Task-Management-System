@@ -114,13 +114,16 @@ const TaskForm = ({ task }) => {
   };
 
   const getComments = useCallback(async () => {
+    setIsLoading((prev) => !prev);
     try {
       const response = await axiosClient.get(`/tasks/${task.id}/comments`);
       dispatch(setComments(response.data));
     } catch (error) {
       console.error("Error fetching comments:", error);
+    } finally {
+      setIsLoading((prev) => !prev);
     }
-  }, [dispatch, task.id]);
+  }, [dispatch]);
 
   useEffect(() => {
     getComments();
@@ -214,7 +217,11 @@ const TaskForm = ({ task }) => {
                   </span>
                 </div>
 
-                <Comments comments={comments} taskId={task.id} />
+                <Comments
+                  comments={comments}
+                  taskId={task.id}
+                  isLoading={isLoading}
+                />
               </div>
               {/* Right: Form Fields */}
               <div className="flex flex-col col-span-1 gap-4">
