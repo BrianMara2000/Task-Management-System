@@ -55,6 +55,7 @@ const TaskForm = ({ task }) => {
     assignee: task.assigned_user.id,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [commentLoading, setCommentLoading] = useState(false);
   const [errors, setErrors] = useState([null]);
 
   const handleUpload = (file) => {
@@ -114,16 +115,16 @@ const TaskForm = ({ task }) => {
   };
 
   const getComments = useCallback(async () => {
-    setIsLoading((prev) => !prev);
+    setCommentLoading(true);
     try {
       const response = await axiosClient.get(`/tasks/${task.id}/comments`);
       dispatch(setComments(response.data));
     } catch (error) {
       console.error("Error fetching comments:", error);
     } finally {
-      setIsLoading((prev) => !prev);
+      setCommentLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, task.id]);
 
   useEffect(() => {
     getComments();
@@ -212,15 +213,16 @@ const TaskForm = ({ task }) => {
                 </Card>
                 <div className="flex items-center mt-5 gap-2">
                   <DialogTitle>Comments</DialogTitle>
+
                   <span className="bg-gray-300 px-2 py-1 font-bold rounded-full text-xs">
-                    {comments.length}
+                    {commentLoading ? "0" : comments.length}
                   </span>
                 </div>
 
                 <Comments
                   comments={comments}
                   taskId={task.id}
-                  isLoading={isLoading}
+                  commentLoading={commentLoading}
                 />
               </div>
               {/* Right: Form Fields */}
