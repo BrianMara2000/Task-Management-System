@@ -1,51 +1,50 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Image,
-  LaughIcon,
-  SendHorizonal,
-  Smile,
-  SmileIcon,
-  Sticker,
-} from "lucide-react";
+import { Image, SendHorizonal, SmileIcon, Sticker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { axiosClient } from "@/axios";
 import { addComment, removeComment } from "../commentSlice";
+import { CommentSkeleton } from "./CommentSkeleton";
+import Spinner from "@/components/ui/spinner";
 
-const Comments = ({ comments, taskId }) => {
+const Comments = ({ comments, taskId, commentLoading }) => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
 
   const [comment, setComment] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
+    console.log(comment);
+    setIsLoading(true);
 
-    const tempComment = {
-      id: Date.now(), // temporary ID
-      content: comment,
-      pending: true, // optional: flag for loading state
-      user: user,
-    };
+    // const tempComment = {
+    //   id: Date.now(), // temporary ID
+    //   comment,
+    //   pending: true, // optional: flag for loading state
+    //   user: user,
+    // };
 
-    dispatch(addComment({ comment: tempComment }));
+    // dispatch(addComment({ comment: tempComment }));
 
     try {
-      await axiosClient.post(`/tasks/${taskId}/comments`, {
+      const response = await axiosClient.post(`/tasks/${taskId}/comments`, {
         content: comment,
       });
+
+      dispatch(addComment(response.data));
+      setComment("");
     } catch (error) {
-      dispatch(removeComment(tempComment.id)); // Roll back
+      dispatch(removeComment(comment.id)); // Roll back
       console.error("Error adding comment:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    console.log("Comments users: ", comments.user);
-  }, [comments]);
 
   return (
     <>
@@ -56,7 +55,7 @@ const Comments = ({ comments, taskId }) => {
             src={user.profile_image}
             alt="User Avatar"
           />
-          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
         </Avatar>
 
         <div className="flex flex-col border-2 p-3 rounded-xl w-full ">
@@ -86,34 +85,45 @@ const Comments = ({ comments, taskId }) => {
 
             <Button
               onClick={handleAddComment}
-              disabled={!comment.trim()}
               className="text-gray-400 hover:text-blue-500 bg-transparent hover:bg-transparent cursor-pointer"
             >
-              <SendHorizonal size={18} />
+              {isLoading ? (
+                <Spinner className="w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin mr-2" />
+              ) : (
+                <SendHorizonal size={18} />
+              )}
             </Button>
           </div>
         </div>
       </div>
       <ScrollArea className="flex flex-col h-[300px] w-full p-3">
-        {comments.map((comment) => (
-          <div key={comment.id} className="flex gap-3 mb-4">
-            <Avatar>
-              <AvatarImage
-                className="rounded-full w-8 h-8 object-cover"
-                src={comment.user?.profile_image}
-                alt="Project Image"
-              />
-              <AvatarFallback>{comment.user?.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col">
-                <p className="font-semibold text-sm">{comment.user?.name}</p>
-                <p className="text-[12px] text-gray-500">5 seconds ago</p>
+        {commentLoading ? (
+          <>
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
+          </>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.id} className="flex gap-3 mb-4">
+              <Avatar>
+                <AvatarImage
+                  className="rounded-full w-8 h-8 object-cover"
+                  src={comment.user?.profile_image}
+                  alt="Project Image"
+                />
+                <AvatarFallback>{comment.user?.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col">
+                  <p className="font-semibold text-sm">{comment.user?.name}</p>
+                  <p className="text-[12px] text-gray-500">5 seconds ago</p>
+                </div>
+                <p className="text-sm text-gray-700">{comment.comment}</p>
               </div>
-              <p className="text-sm text-gray-700">{comment.comment}</p>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </ScrollArea>
     </>
   );
