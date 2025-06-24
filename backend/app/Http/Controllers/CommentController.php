@@ -23,15 +23,16 @@ class CommentController extends Controller
 
     public function store(Request $request, Task $task)
     {
-        $request->validate([
+        $validated = $request->validate([
             'content' => 'required|string|max:255',
         ]);
+
 
         $comment = Comment::create([
             'task_id' => $task->id,
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
-            'content' => $request->content,
+            'content' => $validated['content'],
         ]);
 
         return response()->json(['comment' => new CommentResource($comment)]);
