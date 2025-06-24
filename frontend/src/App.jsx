@@ -12,21 +12,25 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    if (token) {
-      dispatch(setToken(token));
-      axiosClient
-        .get("/getUser")
-        .then((response) => {
+    const fetchUser = async () => {
+      if (token) {
+        dispatch(setToken(token));
+        try {
+          const response = await axiosClient.get("/getUser");
           dispatch(setUser(response.data));
-        })
-        .catch(() => {
+        } catch (error) {
           localStorage.removeItem("token");
           dispatch(setToken(null));
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+          console.error("Failed to fetch user:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
   }, [dispatch]);
 
   if (loading) return <div>Loading...</div>; // Optional: Add a loading indicator

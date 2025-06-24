@@ -21,7 +21,7 @@ class CommentResource extends JsonResource
         return [
             'id' => $this->id,
             'task_id' => $this->task_id,
-            'created_by' => $this->created_by,
+            'user' => new UserResource($this->user),
             'comment' => $this->content,
             'created_at' => (new Carbon($this->created_at))->format('Y-m-d'),
             'updated_at' => (new Carbon($this->updated_at))->format('Y-m-d'),
