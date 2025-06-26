@@ -2,30 +2,26 @@ import AppRoutes from "./routes/AppRoutes";
 import "./index.css";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { setUser, setToken } from "@/features/auth/authSlice";
+import { setUser } from "@/features/auth/authSlice";
 import { axiosClient } from "./axios";
 
 const App = () => {
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     const fetchUser = async () => {
-      if (token) {
-        dispatch(setToken(token));
-        try {
-          const response = await axiosClient.get("/getUser");
-          dispatch(setUser(response.data));
-        } catch (error) {
-          localStorage.removeItem("token");
-          dispatch(setToken(null));
+      setLoading(true);
+      try {
+        const response = await axiosClient.get("/getUser");
+        dispatch(setUser(response.data));
+      } catch (error) {
+        if (error.response?.status === 401) {
+          dispatch(setUser(null));
+        } else {
           console.error("Failed to fetch user:", error);
-        } finally {
-          setLoading(false);
         }
-      } else {
+      } finally {
         setLoading(false);
       }
     };
