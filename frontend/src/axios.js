@@ -1,6 +1,5 @@
 import axios from "axios";
 import { store } from "./store"; // Import the store directly
-import { setToken } from "./features/auth/authSlice";
 
 const axiosClient = axios.create({
   baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
@@ -27,7 +26,6 @@ export const setupInterceptors = (navigate) => {
     (error) => {
       if (error.response) {
         if (error.response.status === 401) {
-          store.dispatch(setToken(null)); // Use store.dispatch instead of useDispatch()
           navigate("/login"); // Use navigate directly
         }
 

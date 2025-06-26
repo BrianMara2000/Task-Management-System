@@ -1,9 +1,6 @@
-import { useDispatch } from "react-redux";
-import { setUser, setToken } from "../authSlice";
-import { axiosClient, csrfClient } from "../../../axios";
 import { Mail, LockKeyhole, Eye, EyeOff } from "lucide-react";
 import LoginIllustrator from "../../../assets/LoginIllustrator.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Spinner from "@/components/ui/spinner";
+import { useAuth } from "@/hooks/useAuth";
 
 const schema = z.object({
   email: z.string().email("This field is required"),
@@ -18,10 +16,10 @@ const schema = z.object({
 });
 
 const LoginForm = () => {
-  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+
+  const { login } = useAuth();
 
   const {
     register,
@@ -34,17 +32,7 @@ const LoginForm = () => {
   const onSubmit = async (data) => {
     setIsLoading((prev) => !prev);
     try {
-      await csrfClient.get("/sanctum/csrf-cookie"); // CSRF protection
-      const response = await axiosClient.post("/login", {
-        email: data.email,
-        password: data.password,
-      });
-
-      dispatch(setUser({ user: response.data.user }));
-      dispatch(setToken(response.data.token));
-
-      localStorage.setItem("token", response.data.token);
-      navigate("/app/home");
+      await login(data.email, data.password);
     } catch (err) {
       if (err.response?.status === 422) {
         const backendErrors = err.response.data.errors;
