@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules;
@@ -35,18 +36,24 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!Auth::attempt($request->only('email', 'password'), true)) {
             throw ValidationException::withMessages(['email' => 'Invalid credentials']);
         }
 
-        return response()->json(['message' => 'Successfully logged in', 'user', $user, 'token' => $user->createToken('API Token')->plainTextToken]);
+        $user = Auth::user();
+
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user,
+        ]);
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete(); // Revoke current token
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out successfully']);
     }
