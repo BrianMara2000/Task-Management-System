@@ -22,7 +22,7 @@ A full-featured task management system inspired by Asana, built with **Laravel 1
 | ------------- | ------------------ | ---------------------- |
 | React         | Laravel 12         | ShadCN UI, TailwindCSS |
 | Vite          | Laravel Sanctum    | Figma (Design)         |
-| Axios         | MySQL / PostgreSQL | GitHub                 |
+| Axios         | MySQL              | GitHub                 |
 | Redux Toolkit | Laravel Eloquent   | VSCode                 |
 
 ---
