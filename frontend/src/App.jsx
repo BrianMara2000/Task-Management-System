@@ -7,11 +7,10 @@ import { axiosClient } from "./axios";
 
 const App = () => {
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
-      setLoading(true);
       try {
         const response = await axiosClient.get("/getUser");
         dispatch(setUser(response.data));
